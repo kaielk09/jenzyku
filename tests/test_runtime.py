@@ -43,6 +43,21 @@ class RuntimeTests(unittest.TestCase):
                 self.assertEqual(run_file(source), 0)
             self.assertEqual(output.getvalue(), "Hej Ola\n")
 
+    def test_lists_builtins_and_for_loop(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "collections.321"
+            source.write_text(
+                'let items = ["ala", "ola", "ewa"]\n'
+                'print len(items)\n'
+                'print upper(items[0])\n'
+                'for item in items:\n'
+                '    print item\n'
+                'print max(3, 9, 4)\n', encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(run_file(source), 0)
+            self.assertEqual(output.getvalue(), "3\nALA\nala\nola\newa\n9\n")
+
     def test_import_inside_project(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

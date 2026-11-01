@@ -1,0 +1,23 @@
+name: 321code Windows installer
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build standalone interpreter and installer
+        run: .\build_windows.bat
+      - name: Upload Windows EXE files
+        uses: actions/upload-artifact@v4
+        with:
+          name: 321code-windows
+          path: dist/*.exe
+          if-no-files-found: error

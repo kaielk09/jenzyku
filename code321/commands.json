@@ -1,0 +1,27 @@
+{
+  "language": "321code",
+  "schema_version": 1,
+  "note": "Curated starter catalogue. This is not yet a 100,000-command database.",
+  "commands": [
+    {"name":"help","aliases":["pomoc"],"category":"core","description":"Pokazuje listę komend."},
+    {"name":"version","aliases":["wersja"],"category":"core","description":"Pokazuje wersję 321code."},
+    {"name":"run","aliases":["uruchom"],"category":"language","description":"Uruchamia plik .321."},
+    {"name":"start","aliases":[],"category":"project","description":"Uruchamia skrypt start z 321code.json (odpowiednik npm start)."},
+    {"name":"build","aliases":[],"category":"project","description":"Uruchamia skrypt build z 321code.json."},
+    {"name":"init","aliases":["create"],"category":"project","description":"Tworzy podstawowy plik 321code.json."},
+    {"name":"install","aliases":["add"],"category":"packages","description":"Punkt wejścia przyszłego menedżera pakietów; obecnie niczego nie pobiera."},
+    {"name":"clear","aliases":["cls"],"category":"terminal","description":"Czyści ekran terminala."},
+    {"name":"print","aliases":["echo"],"category":"language","description":"Wyświetla tekst w programie .321."},
+    {"name":"let","aliases":["var"],"category":"language","description":"Tworzy zmienną tekstową."},
+    {"name":"file.list","aliases":["ls"],"category":"files","description":"Planowana komenda listowania plików."},
+    {"name":"file.read","aliases":["cat"],"category":"files","description":"Planowana komenda odczytu pliku."},
+    {"name":"file.write","aliases":[],"category":"files","description":"Planowana komenda zapisu pliku."},
+    {"name":"net.get","aliases":["http.get"],"category":"network","description":"Planowana komenda żądania HTTP."},
+    {"name":"json.parse","aliases":[],"category":"data","description":"Planowana komenda parsowania JSON."},
+    {"name":"text.upper","aliases":[],"category":"text","description":"Planowana konwersja tekstu na wielkie litery."},
+    {"name":"text.lower","aliases":[],"category":"text","description":"Planowana konwersja tekstu na małe litery."},
+    {"name":"time.now","aliases":[],"category":"system","description":"Planowana komenda odczytu czasu."},
+    {"name":"math.sum","aliases":[],"category":"math","description":"Planowana suma liczb."},
+    {"name":"project.info","aliases":[],"category":"project","description":"Planowane informacje o projekcie."}
+  ]
+}

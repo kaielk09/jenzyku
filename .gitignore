@@ -8,3 +8,4 @@ dist/
 .pytest_cache/
 .DS_Store
 Thumbs.db
+\n.build-venv/\n*.spec\n

@@ -11,8 +11,6 @@ from pathlib import Path
 from . import __version__
 from .runtime import run_file
 
-ROOT = Path.cwd()
-
 
 def load_catalogue() -> dict:
     path = Path(__file__).with_name("commands.json")
@@ -35,14 +33,35 @@ def run_script(name: str) -> int:
     if not isinstance(command, list) or not command or not all(isinstance(x, str) for x in command):
         raise SystemExit(f"Brak poprawnego skryptu '{name}' w 321code.json.")
     print(f"321code: uruchamiam skrypt '{name}'")
-    # No shell=True: arguments are passed directly to the selected executable.
     result = subprocess.run(command, check=False)
     return result.returncode
 
 
+def ai_command(args: list[str]) -> int:
+    if not args:
+        from .ai_app import main as creator_main
+        return creator_main()
+    action, *rest = args
+    if action in {"help", "pomoc"}:
+        print("321 AI — tworzenie własnych modeli językowych")
+        print("  321 ai              Otwórz kreator modelu")
+        print("  321 ai train <folder>  Wytrenuj model z dataset.txt")
+        print("  321 ai chat <folder>   Otwórz okno czatu wytrenowanego modelu")
+        return 0
+    if action == "train":
+        from .ai_trainer import main as trainer_main
+        return trainer_main(rest)
+    if action == "chat":
+        from .ai_chat import main as chat_main
+        return chat_main(rest)
+    print("Nieznana komenda AI. Wpisz: 321 ai help", file=sys.stderr)
+    return 2
+
+
 def show_help() -> None:
     print(f"321code {__version__} — własny język i narzędzia")
-    print("Użycie: 321 <komenda> [argumenty]\n  ai             Otwórz 321 AI Creator")
+    print("Użycie: 321 <komenda> [argumenty]")
+    print("  ai             Twórz i trenuj własne modele AI")
     print("\nKomendy:")
     for item in load_catalogue()["commands"]:
         print(f"  {item['name']:<14} {item['description']}")
@@ -55,7 +74,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("args", nargs="*")
     ns = parser.parse_args(argv)
     cmd = ns.command.lower()
-
     if cmd in {"help", "pomoc", "--help"}:
         show_help()
         return 0
@@ -70,8 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     if cmd in {"start", "build"}:
         return run_script(cmd)
     if cmd == "ai":
-        from .ai_app import main as ai_main
-        return ai_main()
+        return ai_command(ns.args)
     if cmd in {"install", "init", "clear"}:
         if cmd == "clear":
             os.system("cls" if os.name == "nt" else "clear")
@@ -86,7 +103,6 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         print("Menedżer pakietów jest w przygotowaniu. Nie pobrano żadnych plików.")
         return 0
-
     print(f"Nieznana komenda: {cmd}. Wpisz '321 help'.", file=sys.stderr)
     return 2
 

@@ -100,9 +100,9 @@ class Interpreter:
         body = []
         while index < len(lines) and lines[index][0] > indent:
             current_indent = lines[index][0]
-            if current_indent != indent + 4:
-                raise ValueError(f"Nieprawidłowe wcięcie w linii {lines[index][2]} (użyj 4 spacji)")
-            body.append(lines[index])
+            if current_indent < indent + 4 or (current_indent - indent) % 4 != 0:
+                raise ValueError(f"Nieprawidłowe wcięcie w linii {lines[index][2]} (użyj wielokrotności 4 spacji)")
+            body.append((current_indent - indent - 4, lines[index][1], lines[index][2]))
             index += 1
         return body, index
 

@@ -42,7 +42,7 @@ def run_script(name: str) -> int:
 
 def show_help() -> None:
     print(f"321code {__version__} — własny język i narzędzia")
-    print("Użycie: 321 <komenda> [argumenty]")
+    print("Użycie: 321 <komenda> [argumenty]\n  ai             Otwórz 321 AI Creator")
     print("\nKomendy:")
     for item in load_catalogue()["commands"]:
         print(f"  {item['name']:<14} {item['description']}")
@@ -69,6 +69,9 @@ def main(argv: list[str] | None = None) -> int:
         return run_file(Path(ns.args[0]))
     if cmd in {"start", "build"}:
         return run_script(cmd)
+    if cmd == "ai":
+        from .ai_app import main as ai_main
+        return ai_main()
     if cmd in {"install", "init", "clear"}:
         if cmd == "clear":
             os.system("cls" if os.name == "nt" else "clear")

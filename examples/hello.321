@@ -1,4 +1,17 @@
-# Pierwszy program w 321code
-print "Witaj w 321code!"
+# Przyklad funkcji, petli i warunku w 321code
 let name = "Świecie"
-print "Witaj, " + name
+let count = 0
+
+def greet(person):
+    print "Witaj, " + person
+
+greet(name)
+
+while count < 3:
+    print count
+    set count = count + 1
+
+if count == 3:
+    print "Gotowe!"
+else:
+    print "Cos poszlo nie tak"

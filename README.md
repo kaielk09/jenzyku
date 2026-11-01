@@ -2,7 +2,7 @@
 
 **321code** is a Polish-first, extensible programming language and command-line tool. Source files use the `.321` extension.
 
-> Current status: early prototype. This repository contains the interpreter foundation and a small, curated command catalogue. It does **not** claim to contain 100,000 verified commands yet.
+> Current status: early prototype (version 0.2). The interpreter supports variables, expressions, conditions, loops, functions and local imports. The command catalogue is still small; this project does **not** claim to contain 100,000 verified commands.
 
 ## Install (Python 3.10+)
 
@@ -10,26 +10,37 @@ From the repository directory:
 
 ```bash
 python -m pip install .
-```
-
-The package installs a command named `321` on systems where the Python Scripts/bin directory is on PATH.
-
-Check it:
-
-```bash
 321 version
 321 help
 321 run examples/hello.321
 ```
 
-If the `321` command is not found, run it through Python:
+If the `321` command is not found, use `python -m code321.cli` instead.
 
-```bash
-python -m code321.cli version
-python -m code321.cli run examples/hello.321
+## Language example
+
+```321
+let name = "Świecie"
+let count = 0
+
+def greet(person):
+    print "Witaj, " + person
+
+greet(name)
+
+while count < 3:
+    print count
+    set count = count + 1
+
+if count == 3:
+    print "Gotowe!"
+else:
+    print "Jeszcze nie"
 ```
 
-## Familiar commands, 321code names
+Run it with `321 run examples/hello.321`. More examples and syntax are documented in [docs/SYNTAX.md](docs/SYNTAX.md).
+
+## CLI equivalents
 
 | Familiar command | 321code command |
 |---|---|
@@ -39,47 +50,23 @@ python -m code321.cli run examples/hello.321
 | `python main.py` | `321 run main.321` |
 | `clear` | `321 clear` |
 
-These are 321code CLI commands, not a promise that every external tool is automatically translated. Project scripts are configured in `321code.json`.
+These are 321code CLI commands, not automatic translations of every external tool. Project scripts are configured in `321code.json`. The `install` command is still a placeholder and does not download packages.
 
-## Example language
+## Safety and current limits
 
-```321
-print "Witaj w 321code!"
-let name = "Świecie"
-print "Witaj, " + name
-```
-
-Run it with `321 run examples/hello.321`.
-
-## Project scripts
-
-Create a `321code.json` file:
-
-```json
-{
-  "name": "my-project",
-  "scripts": {
-    "start": ["python", "app.py"],
-    "build": ["python", "-m", "compileall", "."]
-  }
-}
-```
-
-Then use `321 start` or `321 build`. Scripts are launched as argument arrays without a shell. Only run scripts from projects you trust.
-
-## Command catalogue
-
-The catalogue is in `code321/commands.json`. It documents commands, categories, aliases and descriptions. The first release starts with a curated set; expansion toward 100,000 entries will require deduplication, compatibility checks, documentation and tests. A large count alone does not make commands useful or safe.
+Expressions use a restricted AST evaluator. The language does not execute source with Python `eval` or `exec`. Loops and function-call depth have limits. Imports are restricted to `.321` files within the project folder. Project scripts in `321code.json` launch external programs, so only run scripts from projects you trust.
 
 ## Roadmap
 
-- [x] Initial CLI and `.321` interpreter
-- [x] Command catalogue and help
-- [x] Project scripts (`start`, `build`)
-- [ ] Package registry with verified packages
+- [x] CLI and `.321` interpreter
+- [x] Variables, expressions, conditions, loops and functions
+- [x] Local module imports
+- [x] Command catalogue and project scripts
+- [ ] Verified package registry and real `321 install`
 - [ ] Windows installer and Android/Termux package
-- [ ] More language features, modules and tests
-- [ ] Large, reviewed command database
+- [ ] Expanded, reviewed command database
+
+A useful command catalogue needs documentation, compatibility checks and tests; a large count alone does not make commands useful.
 
 ## License
 

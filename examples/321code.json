@@ -1,0 +1,6 @@
+{
+  "name": "hello-321code",
+  "scripts": {
+    "start": ["python", "-m", "code321.cli", "run", "examples/hello.321"]
+  }
+}

@@ -63,7 +63,7 @@ class Chat:
                 probs = torch.softmax(values, dim=-1)
                 nxt = indices.gather(-1, torch.multinomial(probs, num_samples=1))
                 ids = torch.cat([ids, nxt], dim=1)
-                if bytes(ids[0].tolist()).endswith(b"\nUżytkownik:"):
+                if bytes(ids[0].tolist()).endswith("\nUżytkownik:".encode("utf-8")):
                     break
         generated = bytes(ids[0].tolist()).decode("utf-8", errors="replace")
         answer = generated.split("\nAI:", 1)[-1].split("\nUżytkownik:", 1)[0].strip()

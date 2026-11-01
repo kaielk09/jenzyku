@@ -45,6 +45,14 @@ def _expression(source: str, variables: dict[str, Any]) -> Any:
     def visit(item: ast.AST) -> Any:
         if isinstance(item, ast.Constant) and isinstance(item.value, (str, int, float, bool, type(None))):
             return item.value
+        if isinstance(item, ast.List):
+            return [visit(element) for element in item.elts]
+        if isinstance(item, ast.Tuple):
+            return tuple(visit(element) for element in item.elts)
+        if isinstance(item, ast.Dict):
+            return {visit(key): visit(value) for key, value in zip(item.keys, item.values)}
+        if isinstance(item, ast.Subscript):
+            return visit(item.value)[visit(item.slice)]
         if isinstance(item, ast.Name):
             if item.id in variables:
                 return variables[item.id]
@@ -76,12 +84,19 @@ def _expression(source: str, variables: dict[str, Any]) -> Any:
             return True
         if isinstance(item, ast.Call) and isinstance(item.func, ast.Name):
             args = [visit(arg) for arg in item.args]
-            if item.func.id == "str" and len(args) == 1:
-                return str(args[0])
-            if item.func.id == "int" and len(args) == 1:
-                return int(args[0])
+            builtins = {
+                "str": str, "int": int, "float": float, "bool": bool,
+                "len": len, "abs": abs, "min": min, "max": max, "round": round,
+            }
+            if item.func.id in builtins:
+                return builtins[item.func.id](*args)
             if item.func.id == "range" and 1 <= len(args) <= 3 and all(isinstance(x, int) for x in args):
                 return range(*args)
+            if item.func.id == "input" and len(args) <= 1:
+                return input(str(args[0]) if args else "")
+            if item.func.id in {"upper", "lower"} and len(args) == 1:
+                value = str(args[0])
+                return value.upper() if item.func.id == "upper" else value.lower()
             raise ValueError(f"Niedozwolone wywołanie funkcji w wyrażeniu: {item.func.id}")
         raise ValueError(f"Niedozwolony element wyrażenia: {type(item).__name__}")
 
@@ -134,10 +149,12 @@ class Interpreter:
                 i = after
                 continue
 
-            match = re.fullmatch(r"for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+range\((.*)\):", line)
+            match = re.fullmatch(r"for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+):", line)
             if match:
                 body, after = self._block(lines, i + 1, indent)
-                values = _expression("range(" + match.group(2) + ")", self.variables)
+                values = _expression(match.group(2), self.variables)
+                if not isinstance(values, (range, list, tuple, str, dict)):
+                    raise ValueError("Pętla for wymaga listy, tekstu, słownika lub range()")
                 if len(values) > MAX_LOOP_ITERATIONS:
                     raise ValueError(f"Pętla przekracza limit {MAX_LOOP_ITERATIONS} powtórzeń")
                 for value in values:

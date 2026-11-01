@@ -1,6 +1,7 @@
 """Small, deliberately restricted interpreter for .321 source files."""
 from __future__ import annotations
 
+import ast
 import re
 import sys
 from pathlib import Path
@@ -9,9 +10,9 @@ from pathlib import Path
 def _value(expression: str, variables: dict[str, str]) -> str:
     expression = expression.strip()
     if expression.startswith('"') and expression.endswith('"'):
-        return bytes(expression[1:-1], "utf-8").decode("unicode_escape")
+        return ast.literal_eval(expression)
     if expression.startswith("'") and expression.endswith("'"):
-        return expression[1:-1]
+        return ast.literal_eval(expression)
     if expression in variables:
         return variables[expression]
     # Support simple string concatenation without eval().

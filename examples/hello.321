@@ -1,0 +1,4 @@
+# Pierwszy program w 321code
+print "Witaj w 321code!"
+let name = "Świecie"
+print "Witaj, " + name

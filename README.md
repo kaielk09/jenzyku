@@ -71,3 +71,12 @@ A useful command catalogue needs documentation, compatibility checks and tests; 
 ## License
 
 MIT. See `LICENSE`.
+
+
+## 321 AI Creator (experimental)
+
+After installing this package, run `321 ai` to open the desktop creator. It creates an `ai/<model-name>/` project with `config.json` and `dataset.txt`, then opens a terminal training process.
+
+Add your own lawful, high-quality examples to `dataset.txt`. The starter trainer requires PyTorch (`python -m pip install torch`). It is a **tiny educational character-level GRU**, not a general-purpose LLM. It learns patterns from supplied text and may produce poor or repetitive output. The GPU name in the form is descriptive; the trainer automatically selects CUDA only if PyTorch detects a compatible NVIDIA GPU, otherwise CPU. It uses a small batch and attempts to cap CUDA memory use, but cannot guarantee safe temperatures on every machine. Stop if the device overheats or becomes unstable.
+
+The saved `model.pt` is not a standalone EXE. A packaged Windows desktop chat app is a later step.

@@ -2,22 +2,26 @@
 
 **321code** is a Polish-first programming language and command-line tool. Source files use the `.321` extension. It also includes an experimental creator for training small language models from scratch.
 
-## Instalacja
+## Instalator Windows (bez Pythona na komputerze użytkownika)
 
-Wymagany jest Python 3.10 lub nowszy. Jednorazowo, w folderze repozytorium, zainstaluj 321code:
+W repozytorium znajduje się skrypt `build_windows.bat`. Na komputerze, na którym budujesz instalator, uruchom go dwuklikiem. Skrypt używa Pythona i PyInstallera wyłącznie do przygotowania plików EXE.
 
-```bash
-python -m pip install .
-```
+Po zbudowaniu znajdziesz:
+- `dist/321code-Setup.exe` — instalator z oknem i przyciskiem **Zainstaluj**;
+- `dist/321.exe` — samodzielny interpreter języka.
 
-To polecenie instaluje środowisko. Później właściwe komendy użytkownika zaczynają się od `321`:
+Na komputerze docelowym nie trzeba instalować Pythona. Uruchom `321code-Setup.exe`, kliknij **Zainstaluj**. Program kopiuje interpreter do `%LOCALAPPDATA%\\Programs\\321code\\bin` i dopisuje ten folder do zmiennej PATH bieżącego użytkownika. Po pomyślnej instalacji instalator usuwa swój plik EXE; zainstalowany `321.exe` pozostaje na komputerze.
 
-```bash
+Następnie otwórz nowe okno CMD i używaj:
+
+```bat
 321 help
 321 version
-321 run examples/hello.321
+321 run C:\sciezka\do\pliku.321
 321 ai
 ```
+
+**Uwaga:** skrypt BAT buduje instalator na Windows. Nie jest to gotowy plik EXE przechowywany w repozytorium — EXE powstaje dopiero po uruchomieniu skryptu. Build nie został jeszcze potwierdzony na rzeczywistym komputerze Windows.
 
 ## 321 AI — tworzenie własnego modelu
 
@@ -42,24 +46,16 @@ Dane powinny być legalne do użycia, poprawne i zapisane w UTF-8. Wybierz plik 
 
 ### Wymagania i komendy AI
 
-Trening wymaga PyTorch. Instalacja biblioteki jest jednorazową czynnością techniczną:
+Trening wymaga PyTorch. W obecnej wersji moduł treningowy wymaga osobnej instalacji biblioteki PyTorch na komputerze użytkownika, więc samodzielny interpreter EXE nie oznacza jeszcze, że cały trening AI działa bez dodatkowych bibliotek.
 
-```bash
-python -m pip install torch
-```
-
-Następnie wszystkie polecenia narzędzia AI zaczynają się od `321`:
-
-```bash
-321 ai              # otwórz kreator
-321 ai help         # pokaż komendy AI
+```bat
+321 ai
+321 ai help
 321 ai train ai/MojModel
 321 ai chat ai/MojModel
 ```
 
-GPU jest wykrywane automatycznie przez PyTorch. Nazwa GPU wpisana w kreatorze jest tylko informacyjna. Jeśli CUDA nie jest dostępna, trening użyje CPU. Duża liczba kroków może trwać bardzo długo, szczególnie na laptopie. Zacznij od małej liczby kroków i przerwij trening, jeśli komputer działa niestabilnie lub nadmiernie się nagrzewa.
-
-Model i okno czatu są eksperymentalne. To nie jest odpowiednik ChatGPT, a samo zapisanie `model.pt` nie tworzy pliku EXE. Instalator EXE i dystrybucja modeli to osobne, przyszłe etapy.
+GPU jest wykrywane automatycznie przez PyTorch. Nazwa GPU wpisana w kreatorze jest tylko informacyjna. Jeśli CUDA nie jest dostępna, trening użyje CPU. Duża liczba kroków może trwać bardzo długo, szczególnie na laptopie.
 
 ## Przykład języka 321code
 

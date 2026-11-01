@@ -77,7 +77,7 @@ Uruchom: `321 run examples/hello.321`.
 
 ## Status projektu
 
-Interpreter obsługuje zmienne, wyrażenia, warunki, pętle, funkcje i lokalne importy. Katalog komend jest nadal niewielki. Menedżer pakietów `321 install` jest placeholderem i nie pobiera paczek.
+Interpreter obsługuje zmienne, wyrażenia, warunki, pętle while i for, funkcje, lokalne importy, listy, krotki, słowniki oraz odczyt elementów przez indeks lub klucz. Funkcje wbudowane: str(), int(), float(), bool(), len(), abs(), min(), max(), round(), range(), upper(), lower() i input(). Konsola CMD ma kolorowe komunikaty pomocy, sukcesu, informacji i błędów. Katalog komend jest nadal niewielki. Menedżer pakietów `321 install` jest placeholderem i nie pobiera paczek.
 
 ## Licencja
 

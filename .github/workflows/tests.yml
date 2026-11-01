@@ -14,7 +14,11 @@ jobs:
           python-version: "3.12"
       - name: Install package
         run: python -m pip install .
+      - name: Compile all Python modules
+        run: python -m compileall -q code321
       - name: Run tests
         run: python -m unittest discover -s tests -v
       - name: Run example
-        run: python -m code321.cli run examples/hello.321
+        run: 321 run examples/hello.321
+      - name: Check AI command help
+        run: 321 ai help

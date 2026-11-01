@@ -1,0 +1,66 @@
+# 321 AI — przykładowy, autorski zbiór testowy.
+# To mały materiał demonstracyjny. Nie wystarczy do stworzenia uniwersalnego AI.
+Użytkownik: Ile to 2 + 2?
+AI: 2 + 2 = 4.
+Użytkownik: Ile to 5 razy 3?
+AI: 5 razy 3 = 15.
+Użytkownik: Co to jest matematyka?
+AI: Matematyka bada liczby, wzory, kształty, zależności i logiczne rozumowanie.
+Użytkownik: Co to jest fotosynteza?
+AI: Fotosynteza to proces, w którym rośliny wykorzystują energię światła do tworzenia związków odżywczych z wody i dwutlenku węgla.
+Użytkownik: Co robi serce?
+AI: Serce pompuje krew, która przenosi tlen i składniki odżywcze po organizmie.
+Użytkownik: Czym jest komputer?
+AI: Komputer to urządzenie, które przetwarza dane zgodnie z instrukcjami programów.
+Użytkownik: Co to jest programowanie?
+AI: Programowanie polega na zapisywaniu instrukcji, które komputer może wykonywać.
+Użytkownik: Czym jest Python?
+AI: Python to język programowania znany z czytelnej składni i szerokiego zastosowania.
+Użytkownik: Czym jest JavaScript?
+AI: JavaScript to język programowania często używany do tworzenia interaktywnych stron i aplikacji internetowych.
+Użytkownik: Czym jest Lua?
+AI: Lua to lekki język skryptowy używany między innymi do rozszerzania aplikacji i tworzenia gier.
+Użytkownik: Jak uczyć się programowania?
+AI: Warto zacząć od podstaw, pisać małe programy, czytać komunikaty błędów i regularnie ćwiczyć.
+Użytkownik: Co oznacza błąd w programie?
+AI: Błąd oznacza, że program nie działa zgodnie z oczekiwaniami. Należy przeczytać komunikat i sprawdzić wskazane miejsce.
+Użytkownik: Czym jest energia?
+AI: Energia opisuje zdolność do wykonania pracy lub wywołania zmiany.
+Użytkownik: Co to jest grawitacja?
+AI: Grawitacja jest oddziaływaniem, dzięki któremu obiekty posiadające masę przyciągają się.
+Użytkownik: Co to jest Układ Słoneczny?
+AI: Układ Słoneczny obejmuje Słońce oraz obiekty krążące wokół niego, między innymi planety, księżyce i asteroidy.
+Użytkownik: Jak napisać dobrą odpowiedź?
+AI: Dobra odpowiedź powinna być zrozumiała, poprawna, na temat i dopasowana do pytania.
+Użytkownik: Jak rozwiązywać trudne zadania?
+AI: Podziel zadanie na mniejsze części, sprawdź informacje, rozważ możliwe rozwiązania i zweryfikuj wynik.
+Użytkownik: Co to jest język 321code?
+AI: 321code to projekt własnego języka programowania z komendami zaczynającymi się od 321.
+Użytkownik: Jak działa trening modelu?
+AI: Podczas treningu model analizuje przykłady i stopniowo zmienia swoje parametry, aby lepiej przewidywać kolejne elementy tekstu.
+Użytkownik: Czy mały model zawsze odpowiada poprawnie?
+AI: Nie. Mały model może popełniać błędy, powtarzać tekst i nie znać informacji, których nie było w danych.
+Użytkownik: Co powinienem zrobić, gdy nie znam odpowiedzi?
+AI: Najlepiej przyznać, że brakuje informacji, i poszukać wiarygodnego źródła zamiast zgadywać.
+Użytkownik: Jak dbać o jakość danych treningowych?
+AI: Używaj poprawnych, różnorodnych przykładów, usuwaj duplikaty i błędne informacje oraz sprawdzaj, czy masz prawo używać tych danych.
+Użytkownik: Dlaczego model potrzebuje wielu przykładów?
+AI: Różnorodne przykłady pomagają modelowi zauważać wzorce i ograniczają nadmierne dopasowanie do pojedynczych zdań.
+Użytkownik: Co oznacza skrót GPU?
+AI: GPU to procesor graficzny, który może przyspieszać obliczenia równoległe.
+Użytkownik: Co oznacza skrót CPU?
+AI: CPU to główny procesor komputera, który wykonuje instrukcje programów.
+Użytkownik: Czym jest plik tekstowy UTF-8?
+AI: UTF-8 to sposób kodowania tekstu, który pozwala zapisywać znaki wielu języków.
+Użytkownik: Jak bezpiecznie pracować z plikami?
+AI: Rób kopie ważnych danych, sprawdzaj źródło plików i nie uruchamiaj nieznanych programów.
+Użytkownik: Co to jest sieć komputerowa?
+AI: Sieć komputerowa łączy urządzenia, aby mogły wymieniać dane i korzystać ze wspólnych usług.
+Użytkownik: Co to jest internet?
+AI: Internet to globalna sieć połączonych ze sobą sieci komputerowych.
+Użytkownik: Jak rozpoznać wiarygodną informację?
+AI: Sprawdź autora, datę, dowody i porównaj informację z kilkoma niezależnymi, rzetelnymi źródłami.
+Użytkownik: Jak pisać czytelny kod?
+AI: Używaj jasnych nazw, dziel program na małe funkcje, zachowuj spójne formatowanie i dodawaj potrzebne komentarze.
+Użytkownik: Co zrobić, jeśli trening trwa długo?
+AI: Sprawdź liczbę kroków, wielkość danych i używane urządzenie. Nie przeciążaj komputera i przerwij pracę, jeśli sprzęt działa niestabilnie.

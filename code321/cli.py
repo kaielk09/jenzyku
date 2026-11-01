@@ -11,6 +11,44 @@ from pathlib import Path
 from . import __version__
 from .runtime import run_file
 
+RESET = "\033[0m"
+COLORS = {
+    "cyan": "\033[96m", "green": "\033[92m", "yellow": "\033[93m",
+    "red": "\033[91m", "purple": "\033[95m", "blue": "\033[94m",
+}
+
+
+def enable_colors() -> None:
+    """Enable ANSI virtual-terminal sequences in Windows CMD."""
+    if os.name == "nt":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.GetStdHandle(-11)
+            mode = ctypes.c_uint()
+            if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+                kernel32.SetConsoleMode(handle, mode.value | 0x0004)
+        except Exception:
+            pass
+
+
+def paint(message: str, color: str = "cyan") -> str:
+    if not sys.stdout.isatty():
+        return message
+    return f"{COLORS.get(color, COLORS['cyan'])}{message}{RESET}"
+
+
+def info(message: str) -> None:
+    print(paint(message, "cyan"))
+
+
+def success(message: str) -> None:
+    print(paint(message, "green"))
+
+
+def error(message: str) -> None:
+    print(paint(message, "red"), file=sys.stderr)
+
 
 def load_catalogue() -> dict:
     path = Path(__file__).with_name("commands.json")
@@ -32,7 +70,7 @@ def run_script(name: str) -> int:
     command = scripts.get(name)
     if not isinstance(command, list) or not command or not all(isinstance(x, str) for x in command):
         raise SystemExit(f"Brak poprawnego skryptu '{name}' w 321code.json.")
-    print(f"321code: uruchamiam skrypt '{name}'")
+    info(f"321code: uruchamiam skrypt '{name}'")
     result = subprocess.run(command, check=False)
     return result.returncode
 
@@ -43,8 +81,8 @@ def ai_command(args: list[str]) -> int:
         return creator_main()
     action, *rest = args
     if action in {"help", "pomoc"}:
-        print("321 AI — tworzenie własnych modeli językowych")
-        print("  321 ai              Otwórz kreator modelu")
+        print(paint("321 AI — tworzenie własnych modeli językowych", "purple"))
+        print("  321 ai                 Otwórz kreator modelu")
         print("  321 ai train <folder>  Wytrenuj model z dataset.txt")
         print("  321 ai chat <folder>   Otwórz okno czatu wytrenowanego modelu")
         return 0
@@ -54,21 +92,21 @@ def ai_command(args: list[str]) -> int:
     if action == "chat":
         from .ai_chat import main as chat_main
         return chat_main(rest)
-    print("Nieznana komenda AI. Wpisz: 321 ai help", file=sys.stderr)
+    error("Nieznana komenda AI. Wpisz: 321 ai help")
     return 2
 
 
 def show_help() -> None:
-    print(f"321code {__version__} — własny język i narzędzia")
-    print("Użycie: 321 <komenda> [argumenty]")
-    print("  ai             Twórz i trenuj własne modele AI")
+    print(paint(f"321code {__version__} — własny język i narzędzia", "purple"))
+    print(paint("Użycie: 321 <komenda> [argumenty]", "cyan"))
     print("\nKomendy:")
     for item in load_catalogue()["commands"]:
-        print(f"  {item['name']:<14} {item['description']}")
+        print(f"  {paint(item['name'], 'green'):<24} {item['description']}")
     print("\nPlik języka: 321 run plik.321")
 
 
 def main(argv: list[str] | None = None) -> int:
+    enable_colors()
     parser = argparse.ArgumentParser(prog="321", description="Interpreter języka 321code")
     parser.add_argument("command", nargs="?", default="help")
     parser.add_argument("args", nargs="*")
@@ -78,11 +116,11 @@ def main(argv: list[str] | None = None) -> int:
         show_help()
         return 0
     if cmd in {"version", "wersja", "--version"}:
-        print(f"321code {__version__}")
+        print(paint(f"321code {__version__}", "green"))
         return 0
     if cmd in {"run", "uruchom"}:
         if len(ns.args) != 1:
-            print("Użycie: 321 run plik.321", file=sys.stderr)
+            error("Użycie: 321 run plik.321")
             return 2
         return run_file(Path(ns.args[0]))
     if cmd in {"start", "build"}:
@@ -96,14 +134,14 @@ def main(argv: list[str] | None = None) -> int:
         if cmd == "init":
             path = Path("321code.json")
             if path.exists():
-                print("321code.json już istnieje.")
+                error("321code.json już istnieje.")
                 return 1
             path.write_text(json.dumps({"name": Path.cwd().name, "scripts": {}}, indent=2), encoding="utf-8")
-            print("Utworzono 321code.json")
+            success("Utworzono 321code.json")
             return 0
         print("Menedżer pakietów jest w przygotowaniu. Nie pobrano żadnych plików.")
         return 0
-    print(f"Nieznana komenda: {cmd}. Wpisz '321 help'.", file=sys.stderr)
+    error(f"Nieznana komenda: {cmd}. Wpisz '321 help'.")
     return 2
 
 

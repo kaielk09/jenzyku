@@ -34,12 +34,18 @@ class Creator:
     def __init__(self, root: tk.Tk):
         self.root = root
         root.title("321 AI Creator")
-        root.geometry("900x760")
-        root.minsize(780, 680)
+        root.geometry("900x900")
+        root.minsize(780, 820)
         root.configure(bg=BG)
 
         self.name = tk.StringVar(value="MojModel")
-        self.steps = tk.StringVar(value="5000")
+        self.steps = tk.StringVar(value="10000")
+        self.width = tk.StringVar(value="256")
+        self.layers = tk.StringVar(value="6")
+        self.heads = tk.StringVar(value="8")
+        self.context = tk.StringVar(value="256")
+        self.batch = tk.StringVar(value="8")
+        self.learning_rate = tk.StringVar(value="0.0003")
         self.gpu = tk.StringVar(value="Auto")
         self.machine = tk.StringVar(value="Automatycznie")
         self.dataset = tk.StringVar()
@@ -144,7 +150,26 @@ class Creator:
         tk.Label(steps_row, text="kroków", bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
 
-        hardware = self._card(content, "02  •  Sprzęt", "Wybór jest informacyjny. Dostępne urządzenie obliczeniowe wykrywa PyTorch.")
+        advanced = self._card(content, "02  •  Architektura AI", "Konfiguruj wielkość sieci. Większe modele wymagają więcej pamięci i mocniejszego sprzętu.")
+        advanced.pack(fill="x", pady=(0, 12))
+        settings = tk.Frame(advanced, bg=PANEL)
+        settings.pack(fill="x", padx=18, pady=(0, 14))
+        options = [
+            ("SZEROKOŚĆ", self.width, ("128", "256", "384", "512", "768")),
+            ("WARSTWY", self.layers, ("4", "6", "8", "12", "16")),
+            ("GŁOWICE", self.heads, ("4", "8", "12", "16")),
+            ("KONTEKST", self.context, ("128", "256", "512", "1024")),
+            ("BATCH", self.batch, ("4", "8", "16", "32")),
+            ("LEARNING RATE", self.learning_rate, ("0.001", "0.0005", "0.0003", "0.0001")),
+        ]
+        for i, (label, variable, values) in enumerate(options):
+            col = tk.Frame(settings, bg=PANEL)
+            col.grid(row=i // 3, column=i % 3, sticky="ew", padx=5, pady=5)
+            settings.grid_columnconfigure(i % 3, weight=1)
+            self._label(col, label, size=8, weight="bold").pack(anchor="w", pady=(0, 4))
+            ttk.Combobox(col, textvariable=variable, values=values, state="readonly").pack(fill="x", ipady=3)
+
+        hardware = self._card(content, "03  •  Sprzęt", "Wybór jest informacyjny. Dostępne urządzenie obliczeniowe wykrywa PyTorch.")
         hardware.pack(fill="x", pady=(0, 12))
         hwrow = tk.Frame(hardware, bg=PANEL)
         hwrow.pack(fill="x", padx=18, pady=(0, 16))
@@ -158,7 +183,7 @@ class Creator:
             ttk.Combobox(col, textvariable=variable, values=values,
                          state="readonly").pack(fill="x", ipady=4)
 
-        data = self._card(content, "03  •  Dane treningowe",
+        data = self._card(content, "04  •  Dane treningowe",
                           "Wybierz plik TXT. Możesz też użyć przycisku AI — jego funkcja zostanie dodana w przyszłości.")
         data.pack(fill="x", pady=(0, 12))
         file_row = tk.Frame(data, bg=PANEL)
@@ -259,7 +284,7 @@ class Creator:
                 raise ValueError("Wybierz istniejący plik .txt z danymi treningowymi.")
             if source.stat().st_size < 512:
                 raise ValueError("Plik jest za mały. Dodaj co najmniej 512 bajtów tekstu.")
-            project = APP_DIR / "ai" / name
+            if int(self.width.get()) % int(self.heads.get()) != 0:\n                raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")\n            project = APP_DIR / "ai" / name
             project.mkdir(parents=True, exist_ok=False)
             cfg = {
                 "name": name,

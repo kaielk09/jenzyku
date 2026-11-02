@@ -168,7 +168,7 @@ class Creator:
                  insertbackground=TEXT, relief="flat", font=("Segoe UI", 10),
                  highlightthickness=1, highlightbackground=BORDER).pack(
                      side="left", fill="x", expand=True, ipady=11)
-        self._button(file_row, "WKLEJ TEKST", self.open_text_dialog).pack(side="left", padx=(8, 6))
+        self._button(file_row, "AI", self.open_text_dialog).pack(side="left", padx=(8, 6))
         self._button(file_row, "WYBIERZ TXT", self.browse).pack(side="left")
         tk.Label(data, textvariable=self.dataset_info, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(0, 14))

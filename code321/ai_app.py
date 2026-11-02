@@ -292,6 +292,12 @@ class Creator:
                 "gpu_label": self.gpu.get().strip() or "Auto",
                 "device_preference": "auto",
                 "machine_type": self.machine.get(),
+                "width": int(self.width.get()),
+                "layers": int(self.layers.get()),
+                "heads": int(self.heads.get()),
+                "context": int(self.context.get()),
+                "batch_size": int(self.batch.get()),
+                "learning_rate": float(self.learning_rate.get()),
                 "status": "training",
             }
             (project / "config.json").write_text(

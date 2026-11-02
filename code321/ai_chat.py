@@ -44,7 +44,7 @@ class Chat:
             except ImportError:
                 from code321.ai_model import TinyGPT
             saved = torch.load(self.project / "model" / "model.pt", map_location="cpu", weights_only=True)
-            self.model = TinyGPT(**saved["config"])
+            self.model = TinyGPT(**saved["config"])\n            self.context = int(saved["config"].get("context", 128))
             self.model.load_state_dict(saved["state_dict"])
             self.model.eval()
             self.torch = torch
@@ -56,8 +56,8 @@ class Chat:
         torch = self.torch
         ids = torch.tensor([list(("Użytkownik: " + prompt + "\nAI:").encode("utf-8"))], dtype=torch.long)
         with torch.no_grad():
-            for _ in range(240):
-                logits = self.model(ids[:, -128:])[:, -1, :] / 0.9
+            for _ in range(400):
+                logits = self.model(ids[:, -self.context:])[:, -1, :] / 0.9
                 logits[:, :9] = -float("inf")
                 values, indices = torch.topk(logits, k=30, dim=-1)
                 probs = torch.softmax(values, dim=-1)

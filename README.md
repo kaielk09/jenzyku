@@ -57,6 +57,35 @@ Trening wymaga PyTorch. W obecnej wersji moduł treningowy wymaga osobnej instal
 
 GPU jest wykrywane automatycznie przez PyTorch. Nazwa GPU wpisana w kreatorze jest tylko informacyjna. Jeśli CUDA nie jest dostępna, trening użyje CPU. Duża liczba kroków może trwać bardzo długo, szczególnie na laptopie.
 
+
+## Instalacja z CMD przez Python lub Javę
+
+### Python (Python 3.10+)
+
+Pobierz plik `install_321.py` z repozytorium i uruchom:
+
+```bat
+py install_321.py
+```
+
+Skrypt używa aktualnego interpretera Pythona i `pip`, aby pobrać oraz zainstalować 321code z GitHuba. Po instalacji otwórz nowe CMD i wpisz `321 help`.
+
+Możesz też zainstalować bez pobierania skryptu:
+
+```bat
+py -m pip install --upgrade git+https://github.com/kaielk09/jenzyku.git
+```
+
+### Java (Java 11+ na Windows)
+
+Pobierz plik `Install321.java` z repozytorium, a następnie uruchom w CMD:
+
+```bat
+java Install321.java
+```
+
+Program Java pobierze oficjalny `321code-Setup.exe` z repozytorium GitHub i automatycznie go uruchomi. W oknie instalatora kliknij **Zainstaluj**. Java nie zastępuje Pythona do uruchamiania wersji źródłowej — ten sposób uruchamia gotowy instalator Windows.
+
 ## Przykład języka 321code
 
 ```321

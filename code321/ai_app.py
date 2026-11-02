@@ -1,22 +1,32 @@
-"""321 AI Creator desktop application."""
+"""Modern 321 AI Creator desktop interface (Tkinter, no extra GUI dependencies)."""
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 
 APP_DIR = Path.cwd()
+BG = "#0b0b12"
+PANEL = "#141421"
+PANEL_ALT = "#1b1b2b"
+PURPLE = "#8b5cf6"
+PURPLE_HOVER = "#7545df"
+TEXT = "#f4f1ff"
+MUTED = "#a6a1b8"
+GREEN = "#4ade80"
+BORDER = "#29263a"
 
 
 def safe_name(value: str) -> str:
     value = re.sub(r"[^A-Za-z0-9_-]+", "_", value.strip()).strip("_")
     if not value:
-        raise ValueError("Wpisz nazwę z literami lub cyframi.")
+        raise ValueError("Wpisz nazwę zawierającą litery lub cyfry.")
     return value[:48]
 
 
@@ -24,52 +34,173 @@ class Creator:
     def __init__(self, root: tk.Tk):
         self.root = root
         root.title("321 AI Creator")
-        root.geometry("560x690")
-        root.resizable(False, False)
-        root.configure(bg="#101018")
-        tk.Label(root, text="A", font=("Arial", 76, "bold"), fg="#a78bfa", bg="#101018").pack(pady=(8, 0))
-        tk.Label(root, text="321 AI CREATOR", font=("Arial", 19, "bold"), fg="white", bg="#101018").pack(pady=(0, 12))
-        self.name = self.field("Nazwa nowego modelu AI", "MojModel")
-        self.steps = self.field("Liczba kroków treningu", "29000")
-        self.gpu = self.field("Model karty graficznej (informacyjnie)", "Auto")
-        tk.Label(root, text="Rodzaj urządzenia", fg="#d8d4e8", bg="#101018",
-                 font=("Arial", 11, "bold")).pack(anchor="w", padx=42, pady=(12, 5))
-        self.machine = tk.StringVar(value="Komputer")
-        row = tk.Frame(root, bg="#101018")
-        row.pack(anchor="w", padx=42)
-        for value in ("Komputer", "Laptop"):
-            tk.Radiobutton(row, text=value, value=value, variable=self.machine, fg="white",
-                           selectcolor="#29243a", bg="#101018", activebackground="#101018",
-                           activeforeground="white").pack(side="left", padx=(0, 18))
-        tk.Label(root, text="Wybierz plik TXT z danymi, na których model ma się uczyć.",
-                 fg="#d8d4e8", bg="#101018", wraplength=440, justify="left").pack(anchor="w", padx=42, pady=(18, 6))
-        self.dataset = tk.StringVar()
-        dsrow = tk.Frame(root, bg="#101018")
-        dsrow.pack(fill="x", padx=42)
-        tk.Entry(dsrow, textvariable=self.dataset, bg="#242333", fg="white",
-                 insertbackground="white", relief="flat").pack(side="left", fill="x", expand=True, ipady=9)
-        tk.Button(dsrow, text="WYBIERZ", command=self.browse, bg="#38304e", fg="white",
-                  relief="flat").pack(side="left", padx=(6, 0), ipady=5)
-        tk.Label(root, text="Model powstaje od zera. Jego wiedza i jakość będą zależeć od dostarczonych danych.",
-                 wraplength=450, fg="#aaa6bb", bg="#101018", font=("Arial", 9)).pack(pady=18)
-        tk.Button(root, text="CREATE MODEL", command=self.create, bg="#7c3aed", fg="white",
-                  activebackground="#6d28d9", activeforeground="white", relief="flat",
-                  font=("Arial", 14, "bold"), width=26, height=2).pack(pady=8)
+        root.geometry("900x760")
+        root.minsize(780, 680)
+        root.configure(bg=BG)
 
-    def field(self, label: str, default: str) -> tk.Entry:
-        tk.Label(self.root, text=label, fg="#d8d4e8", bg="#101018",
-                 font=("Arial", 11, "bold")).pack(anchor="w", padx=42, pady=(8, 5))
-        entry = tk.Entry(self.root, bg="#242333", fg="white", insertbackground="white",
-                         relief="flat", font=("Arial", 12))
-        entry.pack(fill="x", padx=42, ipady=9)
-        entry.insert(0, default)
+        self.name = tk.StringVar(value="MojModel")
+        self.steps = tk.StringVar(value="5000")
+        self.gpu = tk.StringVar(value="Auto")
+        self.machine = tk.StringVar(value="Automatycznie")
+        self.dataset = tk.StringVar()
+        self.dataset_info = tk.StringVar(value="Nie wybrano pliku TXT")
+        self.status = tk.StringVar(value="Gotowy do konfiguracji")
+        self._style()
+        self._build()
+        self.dataset.trace_add("write", lambda *_: self._update_dataset_info())
+
+    def _style(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("TCombobox", fieldbackground=PANEL_ALT, background=PANEL_ALT,
+                        foreground=TEXT, arrowcolor=TEXT, bordercolor=BORDER,
+                        lightcolor=BORDER, darkcolor=BORDER, padding=8)
+        style.map("TCombobox", fieldbackground=[("readonly", PANEL_ALT)],
+                  foreground=[("readonly", TEXT)])
+        style.configure("Horizontal.TProgressbar", troughcolor=PANEL_ALT,
+                        background=PURPLE, bordercolor=PANEL_ALT, lightcolor=PURPLE,
+                        darkcolor=PURPLE)
+
+    def _label(self, parent, text, color=MUTED, size=10, weight="normal"):
+        return tk.Label(parent, text=text, bg=parent.cget("bg"), fg=color,
+                        font=("Segoe UI", size, weight))
+
+    def _card(self, parent, title, subtitle=None):
+        card = tk.Frame(parent, bg=PANEL, highlightthickness=1, highlightbackground=BORDER)
+        tk.Label(card, text=title, bg=PANEL, fg=TEXT,
+                 font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=18, pady=(15, 2))
+        if subtitle:
+            tk.Label(card, text=subtitle, bg=PANEL, fg=MUTED,
+                     font=("Segoe UI", 9), wraplength=700, justify="left").pack(
+                         anchor="w", padx=18, pady=(0, 12))
+        return card
+
+    def _entry(self, parent, variable, width=None):
+        entry = tk.Entry(parent, textvariable=variable, bg=PANEL_ALT, fg=TEXT,
+                         insertbackground=TEXT, relief="flat", font=("Segoe UI", 11),
+                         highlightthickness=1, highlightbackground=BORDER,
+                         highlightcolor=PURPLE)
+        if width:
+            entry.configure(width=width)
+        entry.pack(fill="x", ipady=10, padx=18, pady=(5, 14))
         return entry
 
+    def _button(self, parent, text, command=None, primary=False, width=None):
+        color = PURPLE if primary else PANEL_ALT
+        button = tk.Button(parent, text=text, command=command, bg=color, fg="white",
+                           activebackground=PURPLE_HOVER if primary else "#29263d",
+                           activeforeground="white", relief="flat", bd=0,
+                           font=("Segoe UI", 10, "bold"), cursor="hand2",
+                           padx=16, pady=10, width=width)
+        return button
+
+    def _build(self):
+        header = tk.Frame(self.root, bg=BG)
+        header.pack(fill="x", padx=28, pady=(22, 16))
+        mark = tk.Frame(header, bg=PURPLE, width=48, height=48)
+        mark.pack(side="left")
+        mark.pack_propagate(False)
+        tk.Label(mark, text="321", bg=PURPLE, fg="white",
+                 font=("Segoe UI", 15, "bold")).place(relx=.5, rely=.5, anchor="center")
+        titles = tk.Frame(header, bg=BG)
+        titles.pack(side="left", padx=14)
+        tk.Label(titles, text="321 AI CREATOR", bg=BG, fg=TEXT,
+                 font=("Segoe UI", 19, "bold")).pack(anchor="w")
+        tk.Label(titles, text="Studio tworzenia własnych modeli językowych",
+                 bg=BG, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w")
+        tk.Label(header, text="BETA", bg="#241b3b", fg="#c4b5fd",
+                 font=("Segoe UI", 9, "bold"), padx=12, pady=6).pack(side="right", pady=8)
+
+        content = tk.Frame(self.root, bg=BG)
+        content.pack(fill="both", expand=True, padx=28)
+        intro = tk.Frame(content, bg=BG)
+        intro.pack(fill="x", pady=(0, 14))
+        tk.Label(intro, text="Nowy projekt AI", bg=BG, fg=TEXT,
+                 font=("Segoe UI", 16, "bold")).pack(anchor="w")
+        tk.Label(intro, text="Ustaw parametry, dodaj zbiór danych i rozpocznij trening od zera.",
+                 bg=BG, fg=MUTED, font=("Segoe UI", 10)).pack(anchor="w", pady=(3, 0))
+
+        model = self._card(content, "01  •  Model", "Podstawowe informacje o projekcie.")
+        model.pack(fill="x", pady=(0, 12))
+        grid = tk.Frame(model, bg=PANEL)
+        grid.pack(fill="x", padx=18, pady=(0, 4))
+        left = tk.Frame(grid, bg=PANEL)
+        right = tk.Frame(grid, bg=PANEL)
+        left.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        right.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        self._label(left, "NAZWA MODELU", size=9, weight="bold").pack(anchor="w")
+        self._entry(left, self.name)
+        self._label(right, "LICZBA KROKÓW TRENINGU", size=9, weight="bold").pack(anchor="w")
+        steps_row = tk.Frame(right, bg=PANEL)
+        steps_row.pack(fill="x", pady=(5, 14))
+        ttk.Combobox(steps_row, textvariable=self.steps,
+                     values=("1000", "5000", "10000", "25000", "50000", "100000"),
+                     state="normal", font=("Segoe UI", 10)).pack(side="left", fill="x", expand=True, ipady=5)
+        tk.Label(steps_row, text="kroków", bg=PANEL, fg=MUTED,
+                 font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
+
+        hardware = self._card(content, "02  •  Sprzęt", "Wybór jest informacyjny. Dostępne urządzenie obliczeniowe wykrywa PyTorch.")
+        hardware.pack(fill="x", pady=(0, 12))
+        hwrow = tk.Frame(hardware, bg=PANEL)
+        hwrow.pack(fill="x", padx=18, pady=(0, 16))
+        for label, variable, values in (
+            ("URZĄDZENIE", self.machine, ("Automatycznie", "Komputer", "Laptop")),
+            ("GPU (OPCJONALNIE)", self.gpu, ("Auto", "NVIDIA", "AMD", "Intel", "CPU")),
+        ):
+            col = tk.Frame(hwrow, bg=PANEL)
+            col.pack(side="left", fill="x", expand=True, padx=(0, 12))
+            self._label(col, label, size=9, weight="bold").pack(anchor="w", pady=(0, 6))
+            ttk.Combobox(col, textvariable=variable, values=values,
+                         state="readonly").pack(fill="x", ipady=4)
+
+        data = self._card(content, "03  •  Dane treningowe",
+                          "Wybierz plik TXT. Możesz też użyć przycisku AI — jego funkcja zostanie dodana w przyszłości.")
+        data.pack(fill="x", pady=(0, 12))
+        file_row = tk.Frame(data, bg=PANEL)
+        file_row.pack(fill="x", padx=18, pady=(0, 8))
+        tk.Entry(file_row, textvariable=self.dataset, bg=PANEL_ALT, fg=TEXT,
+                 insertbackground=TEXT, relief="flat", font=("Segoe UI", 10),
+                 highlightthickness=1, highlightbackground=BORDER).pack(
+                     side="left", fill="x", expand=True, ipady=11)
+        self._button(file_row, "WYBIERZ TXT", self.browse).pack(side="left", padx=(8, 6))
+        # Reserved for a future AI-assisted dataset feature; intentionally no action yet.
+        self._button(file_row, "AI", None).pack(side="left")
+        tk.Label(data, textvariable=self.dataset_info, bg=PANEL, fg=MUTED,
+                 font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(0, 14))
+
+        note = tk.Frame(content, bg="#171426", highlightthickness=1, highlightbackground="#3b2d59")
+        note.pack(fill="x", pady=(0, 12))
+        tk.Label(note, text="ⓘ  Warto wiedzieć", bg="#171426", fg="#c4b5fd",
+                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=14, pady=(10, 2))
+        tk.Label(note, text="To mały model eksperymentalny trenowany od zera. Nie będzie działał jak duży chatbot bez dużego i dobrego zbioru danych. Trening może długo obciążać komputer.",
+                 bg="#171426", fg="#c4bfd0", font=("Segoe UI", 9),
+                 wraplength=790, justify="left").pack(anchor="w", padx=14, pady=(0, 10))
+
+        footer = tk.Frame(self.root, bg=BG)
+        footer.pack(fill="x", padx=28, pady=(2, 20))
+        tk.Label(footer, textvariable=self.status, bg=BG, fg=MUTED,
+                 font=("Segoe UI", 9)).pack(side="left")
+        self._button(footer, "UTWÓRZ MODEL  →", self.create, primary=True).pack(side="right")
+
     def browse(self):
-        path = filedialog.askopenfilename(title="Wybierz dane treningowe",
-            filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")])
+        path = filedialog.askopenfilename(
+            title="Wybierz dane treningowe",
+            filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
+        )
         if path:
             self.dataset.set(path)
+
+    def _update_dataset_info(self):
+        raw = self.dataset.get().strip()
+        if not raw:
+            self.dataset_info.set("Nie wybrano pliku TXT")
+            return
+        path = Path(raw).expanduser()
+        if not path.is_file():
+            self.dataset_info.set("Wybrany plik nie istnieje.")
+            return
+        size = path.stat().st_size
+        self.dataset_info.set(f"✓  {path.name}   •   {size:,} bajtów   •   {'Dane gotowe' if size >= 512 and path.suffix.lower() == '.txt' else 'Sprawdź format lub rozmiar pliku'}")
 
     def create(self):
         try:
@@ -84,9 +215,17 @@ class Creator:
                 raise ValueError("Plik jest za mały. Dodaj co najmniej 512 bajtów tekstu.")
             project = APP_DIR / "ai" / name
             project.mkdir(parents=True, exist_ok=False)
-            cfg = {"name": name, "training_steps": steps, "gpu_label": self.gpu.get().strip() or "Auto",
-                   "device_preference": "auto", "machine_type": self.machine.get(), "status": "training"}
-            (project / "config.json").write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+            cfg = {
+                "name": name,
+                "training_steps": steps,
+                "gpu_label": self.gpu.get().strip() or "Auto",
+                "device_preference": "auto",
+                "machine_type": self.machine.get(),
+                "status": "training",
+            }
+            (project / "config.json").write_text(
+                json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
             shutil.copy2(source, project / "dataset.txt")
             trainer = Path(__file__).resolve().with_name("ai_trainer.py")
             cmd = [sys.executable, str(trainer), str(project)]
@@ -94,6 +233,11 @@ class Creator:
                 subprocess.Popen(["cmd", "/k", *cmd], cwd=str(project))
             else:
                 subprocess.Popen(cmd, cwd=str(project))
+            self.status.set(f"Projekt utworzony: {name}")
+            messagebox.showinfo(
+                "321 AI Creator",
+                f"Projekt „{name}” został utworzony.\n\nTrening uruchomił się w osobnym oknie terminala.\nFolder: {project}"
+            )
             self.root.destroy()
         except FileExistsError:
             messagebox.showerror("321 AI", "Folder o takiej nazwie już istnieje.")

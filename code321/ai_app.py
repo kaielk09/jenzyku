@@ -295,6 +295,8 @@ class Creator:
                     def finish():
                         try:
                             target = APP_DIR / "ai" / safe_name(repo)
+                            if target.exists():
+                                raise ValueError("Folder o tej nazwie już istnieje. Zmień nazwę repozytorium lub usuń stary import.")
                             (target / "model").mkdir(parents=True, exist_ok=True)
                             weights_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{weights_path}"
                             req = urllib.request.Request(weights_url, headers={"User-Agent": "321code-AI-Creator"})
@@ -319,7 +321,7 @@ class Creator:
                             status.set(str(exc))
                     self.root.after(0, finish)
                 except Exception as exc:
-                    self.root.after(0, lambda: (button.configure(state="normal", text="POŁĄCZ"), status.set(str(exc))))
+                    self.root.after(0, lambda exc=exc: (button.configure(state="normal", text="POŁĄCZ"), status.set(str(exc))))
             import threading
             threading.Thread(target=worker, daemon=True).start()
         button.configure(command=check_repo)

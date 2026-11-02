@@ -129,7 +129,13 @@ class Creator:
         left.pack(side="left", fill="x", expand=True, padx=(0, 10))
         right.pack(side="left", fill="x", expand=True, padx=(10, 0))
         self._label(left, "NAZWA MODELU", size=9, weight="bold").pack(anchor="w")
-        self._entry(left, self.name)
+        name_row = tk.Frame(left, bg=PANEL)
+        name_row.pack(fill="x", pady=(5, 14))
+        tk.Entry(name_row, textvariable=self.name, bg=PANEL_ALT, fg=TEXT,
+                 insertbackground=TEXT, relief="flat", font=("Segoe UI", 11),
+                 highlightthickness=1, highlightbackground=BORDER,
+                 highlightcolor=PURPLE).pack(side="left", fill="x", expand=True, ipady=10)
+        self._button(name_row, "POŁĄCZ AI", self.open_connect_dialog).pack(side="left", padx=(8, 0))
         self._label(right, "LICZBA KROKÓW TRENINGU", size=9, weight="bold").pack(anchor="w")
         steps_row = tk.Frame(right, bg=PANEL)
         steps_row.pack(fill="x", pady=(5, 14))
@@ -162,9 +168,8 @@ class Creator:
                  insertbackground=TEXT, relief="flat", font=("Segoe UI", 10),
                  highlightthickness=1, highlightbackground=BORDER).pack(
                      side="left", fill="x", expand=True, ipady=11)
-        self._button(file_row, "WYBIERZ TXT", self.browse).pack(side="left", padx=(8, 6))
-        # Reserved for a future AI-assisted dataset feature; intentionally no action yet.
-        self._button(file_row, "AI", None).pack(side="left")
+        self._button(file_row, "WKLEJ TEKST", self.open_text_dialog).pack(side="left", padx=(8, 6))
+        self._button(file_row, "WYBIERZ TXT", self.browse).pack(side="left")
         tk.Label(data, textvariable=self.dataset_info, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(0, 14))
 
@@ -181,6 +186,143 @@ class Creator:
         tk.Label(footer, textvariable=self.status, bg=BG, fg=MUTED,
                  font=("Segoe UI", 9)).pack(side="left")
         self._button(footer, "UTWÓRZ MODEL  →", self.create, primary=True).pack(side="right")
+
+    def open_text_dialog(self):
+        win = tk.Toplevel(self.root)
+        win.title("321 AI • Wklej tekst")
+        win.geometry("680x520")
+        win.minsize(560, 420)
+        win.configure(bg=BG)
+        win.transient(self.root)
+        tk.Label(win, text="Dodaj własne dane treningowe", bg=BG, fg=TEXT,
+                 font=("Segoe UI", 16, "bold")).pack(anchor="w", padx=22, pady=(20, 4))
+        tk.Label(win, text="Wklej lub wpisz tekst. Zostanie zapisany jako plik TXT na tym komputerze.",
+                 bg=BG, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=22, pady=(0, 12))
+        editor_frame = tk.Frame(win, bg=PANEL, highlightthickness=1, highlightbackground=BORDER)
+        editor_frame.pack(fill="both", expand=True, padx=22, pady=(0, 12))
+        editor = tk.Text(editor_frame, bg=PANEL_ALT, fg=TEXT, insertbackground=TEXT,
+                         wrap="word", relief="flat", font=("Segoe UI", 10),
+                         padx=12, pady=12, undo=True)
+        scroll = ttk.Scrollbar(editor_frame, command=editor.yview)
+        editor.configure(yscrollcommand=scroll.set)
+        editor.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+        bottom = tk.Frame(win, bg=BG)
+        bottom.pack(fill="x", padx=22, pady=(0, 20))
+        tk.Label(bottom, text="Zapis nastąpi po kliknięciu DALEJ.", bg=BG,
+                 fg=MUTED, font=("Segoe UI", 9)).pack(side="left")
+        def save_text():
+            value = editor.get("1.0", "end-1c").strip()
+            if len(value.encode("utf-8")) < 512:
+                messagebox.showwarning("Za mało danych", "Wklej co najmniej 512 bajtów tekstu.", parent=win)
+                return
+            try:
+                folder = APP_DIR / "ai_datasets"
+                folder.mkdir(parents=True, exist_ok=True)
+                filename = safe_name(self.name.get() or "dataset") + "_dataset.txt"
+                path = folder / filename
+                path.write_text(value + "\\n", encoding="utf-8")
+                self.dataset.set(str(path))
+                self.status.set("Zapisano dane: " + path.name)
+                win.destroy()
+            except (OSError, ValueError) as exc:
+                messagebox.showerror("Nie udało się zapisać TXT", str(exc), parent=win)
+        self._button(bottom, "DALEJ  →", save_text, primary=True).pack(side="right")
+
+    def open_connect_dialog(self):
+        win = tk.Toplevel(self.root)
+        win.title("321 AI • Połącz z GitHub")
+        win.geometry("640x330")
+        win.minsize(560, 300)
+        win.configure(bg=BG)
+        win.transient(self.root)
+        tk.Label(win, text="Połącz istniejący model z GitHub", bg=BG, fg=TEXT,
+                 font=("Segoe UI", 16, "bold")).pack(anchor="w", padx=22, pady=(20, 4))
+        tk.Label(win, text="Wklej publiczny link do repozytorium. Program sprawdzi, czy zawiera zgodny, gotowy model 321 AI.",
+                 bg=BG, fg=MUTED, font=("Segoe UI", 9), wraplength=580,
+                 justify="left").pack(anchor="w", padx=22, pady=(0, 14))
+        repo_var = tk.StringVar()
+        tk.Label(win, text="LINK GITHUB (PUBLICZNY)", bg=BG, fg=MUTED,
+                 font=("Segoe UI", 9, "bold")).pack(anchor="w", padx=22)
+        tk.Entry(win, textvariable=repo_var, bg=PANEL_ALT, fg=TEXT,
+                 insertbackground=TEXT, relief="flat", font=("Segoe UI", 11),
+                 highlightthickness=1, highlightbackground=BORDER).pack(
+                     fill="x", padx=22, pady=(6, 12), ipady=10)
+        status = tk.StringVar(value="Repozytorium zostanie tylko odczytane — kod nie będzie uruchamiany.")
+        tk.Label(win, textvariable=status, bg=BG, fg=MUTED, wraplength=580,
+                 justify="left", font=("Segoe UI", 9)).pack(anchor="w", padx=22, pady=(0, 12))
+        button = self._button(win, "POŁĄCZ", None, primary=True)
+        button.pack(anchor="e", padx=22, pady=(0, 18))
+
+        def check_repo():
+            import json
+            import re
+            import urllib.error
+            import urllib.request
+            from urllib.parse import urlparse
+            raw = repo_var.get().strip()
+            parsed = urlparse(raw)
+            match = re.fullmatch(r"/([^/]+)/([^/]+)/?", parsed.path) if parsed.netloc.lower() in {"github.com", "www.github.com"} else None
+            if parsed.scheme != "https" or not match:
+                messagebox.showerror("Nieprawidłowy link", "Wklej link w formacie https://github.com/wlasciciel/repozytorium", parent=win)
+                return
+            owner, repo = match.group(1), match.group(2)
+            button.configure(state="disabled", text="SPRAWDZAM…")
+            status.set("Łączenie z GitHub i sprawdzanie plików…")
+            def worker():
+                try:
+                    headers = {"Accept": "application/vnd.github+json", "User-Agent": "321code-AI-Creator"}
+                    def get_json(url):
+                        req = urllib.request.Request(url, headers=headers)
+                        with urllib.request.urlopen(req, timeout=20) as response:
+                            if response.status != 200:
+                                raise RuntimeError("GitHub zwrócił nieoczekiwaną odpowiedź.")
+                            return json.loads(response.read(5_000_001).decode("utf-8"))
+                    info = get_json(f"https://api.github.com/repos/{owner}/{repo}")
+                    branch = info["default_branch"]
+                    tree = get_json(f"https://api.github.com/repos/{owner}/{repo}/git/trees/{branch}?recursive=1")
+                    paths = {item["path"] for item in tree.get("tree", []) if item.get("type") == "blob"}
+                    meta_path = "model/model_info.json"
+                    weights_path = "model/model.pt"
+                    if meta_path not in paths or weights_path not in paths:
+                        raise ValueError("Repozytorium jest dostępne, ale nie zawiera gotowego modelu w formacie 321 AI (model/model_info.json i model/model.pt). Sam kod źródłowy lub API nie wystarczy.")
+                    meta_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{meta_path}"
+                    req = urllib.request.Request(meta_url, headers={"User-Agent": "321code-AI-Creator"})
+                    with urllib.request.urlopen(req, timeout=20) as response:
+                        meta = json.loads(response.read(100_001).decode("utf-8"))
+                    if meta.get("architecture") != "321-TinyGPT (byte-level Transformer)":
+                        raise ValueError("Znaleziono model, ale jego architektura nie jest zgodna z obecnym czatem 321 AI.")
+                    def finish():
+                        try:
+                            target = APP_DIR / "ai" / safe_name(repo)
+                            (target / "model").mkdir(parents=True, exist_ok=True)
+                            weights_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{weights_path}"
+                            req = urllib.request.Request(weights_url, headers={"User-Agent": "321code-AI-Creator"})
+                            with urllib.request.urlopen(req, timeout=60) as response:
+                                data = response.read(250_000_001)
+                            if len(data) > 250_000_000:
+                                raise ValueError("Plik modelu jest większy niż limit 250 MB.")
+                            (target / "model" / "model.pt").write_bytes(data)
+                            (target / "model" / "model_info.json").write_text(
+                                json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
+                            )
+                            (target / "status.json").write_text(
+                                json.dumps({"status": "imported", "source": raw}, ensure_ascii=False, indent=2),
+                                encoding="utf-8"
+                            )
+                            self.name.set(target.name)
+                            self.status.set("Połączono model z GitHub: " + target.name)
+                            messagebox.showinfo("321 AI", "Zgodny model został pobrany i podłączony. Możesz otworzyć go komendą:\\n321 ai chat " + str(target), parent=win)
+                            win.destroy()
+                        except Exception as exc:
+                            button.configure(state="normal", text="POŁĄCZ")
+                            status.set(str(exc))
+                    self.root.after(0, finish)
+                except Exception as exc:
+                    self.root.after(0, lambda: (button.configure(state="normal", text="POŁĄCZ"), status.set(str(exc))))
+            import threading
+            threading.Thread(target=worker, daemon=True).start()
+        button.configure(command=check_repo)
 
     def browse(self):
         path = filedialog.askopenfilename(

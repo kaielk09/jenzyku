@@ -111,3 +111,18 @@ Interpreter obsługuje zmienne, wyrażenia, warunki, pętle while i for, funkcje
 ## Licencja
 
 MIT. Zobacz `LICENSE`.
+
+
+## 321 Security Scanner
+
+Projekt zawiera również moduł defensywnej analizy statycznej:
+
+```bat
+321 cd "C:\Users\filip\Desktop\MojProgram"
+321 sprawdź
+321 sprawdź internet https://replit.com
+```
+
+Skaner zapamiętuje wybrany folder pomiędzy uruchomieniami CMD, analizuje pliki bez ich uruchamiania, rozpoznaje wybrane identyfikatory API/usług i raportuje podejrzane wskaźniki. Tryb WWW sprawdza podstawowe informacje HTTP(S), nagłówki bezpieczeństwa i treść odpowiedzi. Nie wysyła plików do zewnętrznych serwisów. Szczegóły, limity i ograniczenia: [docs/SECURITY_SCANNER.md](docs/SECURITY_SCANNER.md).
+
+**Ważne:** to narzędzie pomocnicze, a nie pełny antywirus. Wykryte API nie jest samo w sobie zagrożeniem, a brak wskaźników nie gwarantuje bezpieczeństwa.

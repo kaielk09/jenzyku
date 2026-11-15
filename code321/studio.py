@@ -316,7 +316,7 @@ class Studio:
                 return False
             self.editor_path = Path(path)
         try:
-            self.editor_path.write_text(self.editor.get("1.0", "end-1c") + "\\n", encoding="utf-8")
+            self.editor_path.write_text(self.editor.get("1.0", "end-1c") + "\n", encoding="utf-8")
             self.editor_file_label.configure(text=str(self.editor_path))
             self.status.set("Zapisano " + self.editor_path.name)
             return True

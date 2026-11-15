@@ -14,7 +14,7 @@ import threading
 from pathlib import Path
 
 try:
-    from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+    from fastapi import FastAPI, File, Form, HTTPException, Request, Response, UploadFile
     from fastapi.responses import HTMLResponse
 except ImportError as exc:
     raise RuntimeError("Zainstaluj dodatki WWW: pip install '321code-lang[api]'") from exc
@@ -53,7 +53,7 @@ button:disabled{opacity:.45;cursor:wait}.secondary{background:#28243a;border:1px
 @media(max-width:680px){main{padding:17px 13px 35px}.grid{grid-template-columns:1fr}.wide{grid-column:auto}.intro{padding:18px}.header{align-items:flex-start}.pill{font-size:10px;padding:7px 9px}.two{gap:8px}}
 </style></head><body><main>
 <header class="header"><div class="brand"><div class="mark">321</div><div><h1>AI Creator</h1><div class="subtitle">MODEL LAB · TRAIN FROM SCRATCH</div></div></div><div class="pill" id="status">● Gotowy</div></header>
-<section class="intro"><h2>Stwórz własny model AI</h2><p>Skonfiguruj architekturę, dodaj dane i uruchom trening. Panel steruje oryginalnym silnikiem 321 TinyGPT z repozytorium.</p></section>
+<section class="card" id="loginBox"><h3>Logowanie do panelu</h3><p class="hint">Wpisz klucz pokazany w terminalu po uruchomieniu serwera.</p><div class="actions"><input id="loginKey" type="password" placeholder="Klucz dostępu" autocomplete="current-password"><button onclick="login()">ZALOGUJ</button></div></section>\n<section class="intro"><h2>Stwórz własny model AI</h2><p>Skonfiguruj architekturę, dodaj dane i uruchom trening. Panel steruje oryginalnym silnikiem 321 TinyGPT z repozytorium.</p></section>
 <div class="grid">
 <section class="card"><h3>01 · Projekt</h3><p class="hint">Nazwa i podstawowe ustawienia modelu.</p>
 <label for="name">NAZWA MODELU</label><input id="name" value="PurpleModel" maxlength="48">
@@ -92,11 +92,11 @@ async function startTraining(){
  ["name","steps","device","width","layers","heads","context","batch","nprog","nchat","nreason"].forEach(id=>data.append(id,byId(id).value));
  ["programming","conversation","reasoning"].forEach(id=>data.append(id,byId(id).checked?"true":"false"));
  const file=byId("dataset").files[0];if(file)data.append("dataset",file);
- try{const response=await fetch("/start",{method:"POST",headers:{"X-Panel-Key":panelKey},body:data});const result=await response.json();if(!response.ok)throw new Error(result.detail||"Nie udało się uruchomić treningu.");byId("status").textContent="● Trening uruchomiony";await refreshStatus();}
+ try{const response=await fetch("/start",{method:"POST",body:data});const result=await response.json();if(!response.ok)throw new Error(result.detail||"Nie udało się uruchomić treningu.");byId("status").textContent="● Trening uruchomiony";await refreshStatus();}
  catch(error){alert(error.message);button.disabled=false;}
 }
 async function refreshStatus(){
- try{const response=await fetch("/status",{headers:{"X-Panel-Key":panelKey}});const data=await response.json();if(!response.ok)throw new Error(data.detail||"Błąd statusu");byId("status").textContent="● "+data.status;byId("logs").textContent=data.logs.join("");byId("logs").scrollTop=byId("logs").scrollHeight;byId("bar").style.width=data.progress+"%";if(data.status==="Gotowy"||data.status==="Zakończono"||data.status.startsWith("Błąd"))byId("start").disabled=false;}
+ try{const response=await fetch("/status",{credentials:"same-origin"});const data=await response.json();if(!response.ok)throw new Error(data.detail||"Błąd statusu");byId("status").textContent="● "+data.status;byId("logs").textContent=data.logs.join("");byId("logs").scrollTop=byId("logs").scrollHeight;byId("bar").style.width=data.progress+"%";if(data.status==="Gotowy"||data.status==="Zakończono"||data.status.startsWith("Błąd"))byId("start").disabled=false;}
  catch(error){byId("status").textContent="● Brak połączenia";}
 }
 setInterval(refreshStatus,2000);refreshStatus();
@@ -119,7 +119,7 @@ def clean_name(value: str) -> str:
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return HTMLResponse(HTML.replace("__PANEL_KEY__", PANEL_KEY))
+    return HTMLResponse(HTML)
 
 
 @app.post("/start")

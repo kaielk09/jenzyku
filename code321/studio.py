@@ -275,8 +275,8 @@ class Studio:
         for tag in ("keyword", "string", "comment"):
             self.editor.tag_remove(tag, "1.0", "end")
         patterns = {
-            "keyword": r"\\b(let|set|print|if|else|while|for|in|def|return|import)\\b",
-            "string": r'"(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'',
+            "keyword": r"\b(let|set|print|if|else|while|for|in|def|return|import)\b",
+            "string": r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'',
             "comment": r"(?m)#.*$",
         }
         for tag, pattern in patterns.items():

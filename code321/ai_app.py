@@ -46,10 +46,13 @@ class Creator:
         self.context = tk.StringVar(value="256")
         self.batch = tk.StringVar(value="8")
         self.learning_rate = tk.StringVar(value="0.0003")
+        self.dropout = tk.StringVar(value="0.1")
+        self.seed = tk.StringVar(value="321")
+        self.gradient_accumulation = tk.StringVar(value="1")
         self.gpu = tk.StringVar(value="Auto")
         self.machine = tk.StringVar(value="Automatycznie")
         self.dataset = tk.StringVar()
-        self.dataset_info = tk.StringVar(value="Nie wybrano pliku TXT")
+        self.dataset_info = tk.StringVar(value="Nie wybrano zbioru danych")
         self.status = tk.StringVar(value="Gotowy do konfiguracji")
         self._style()
         self._build()
@@ -161,6 +164,9 @@ class Creator:
             ("KONTEKST", self.context, ("128", "256", "512", "1024")),
             ("BATCH", self.batch, ("4", "8", "16", "32")),
             ("LEARNING RATE", self.learning_rate, ("0.001", "0.0005", "0.0003", "0.0001")),
+            ("DROPOUT", self.dropout, ("0.0", "0.05", "0.1", "0.2")),
+            ("SEED", self.seed, ("321", "42", "1234", "2026")),
+            ("AKUMULACJA GRADIENTU", self.gradient_accumulation, ("1", "2", "4", "8")),
         ]
         for i, (label, variable, values) in enumerate(options):
             col = tk.Frame(settings, bg=PANEL)
@@ -184,7 +190,7 @@ class Creator:
                          state="readonly").pack(fill="x", ipady=4)
 
         data = self._card(content, "04  •  Dane treningowe",
-                          "Wybierz plik TXT. Możesz też użyć przycisku AI — jego funkcja zostanie dodana w przyszłości.")
+                          "Obsługiwane formaty: TXT, Markdown, JSONL (messages/prompt-completion) i CSV (kolumny prompt/response).")
         data.pack(fill="x", pady=(0, 12))
         file_row = tk.Frame(data, bg=PANEL)
         file_row.pack(fill="x", padx=18, pady=(0, 8))
@@ -192,8 +198,8 @@ class Creator:
                  insertbackground=TEXT, relief="flat", font=("Segoe UI", 10),
                  highlightthickness=1, highlightbackground=BORDER).pack(
                      side="left", fill="x", expand=True, ipady=11)
-        self._button(file_row, "AI", self.open_text_dialog).pack(side="left", padx=(8, 6))
-        self._button(file_row, "WYBIERZ TXT", self.browse).pack(side="left")
+        self._button(file_row, "WKLEJ TEKST", self.open_text_dialog).pack(side="left", padx=(8, 6))
+        self._button(file_row, "WYBIERZ DANE", self.browse).pack(side="left")
         tk.Label(data, textvariable=self.dataset_info, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(0, 14))
 
@@ -256,7 +262,7 @@ class Creator:
     def browse(self):
         path = filedialog.askopenfilename(
             title="Wybierz dane treningowe",
-            filetypes=[("Pliki tekstowe", "*.txt"), ("Wszystkie pliki", "*.*")]
+            filetypes=[("Zbiory danych", "*.txt *.md *.jsonl *.csv"), ("TXT", "*.txt"), ("JSONL", "*.jsonl"), ("CSV", "*.csv"), ("Markdown", "*.md"), ("Wszystkie pliki", "*.*")]
         )
         if path:
             self.dataset.set(path)
@@ -271,7 +277,8 @@ class Creator:
             self.dataset_info.set("Wybrany plik nie istnieje.")
             return
         size = path.stat().st_size
-        self.dataset_info.set(f"✓  {path.name}   •   {size:,} bajtów   •   {'Dane gotowe' if size >= 512 and path.suffix.lower() == '.txt' else 'Sprawdź format lub rozmiar pliku'}")
+        supported = path.suffix.lower() in {".txt", ".md", ".jsonl", ".csv"}
+        self.dataset_info.set(f"✓  {path.name}   •   {size:,} bajtów   •   {'Dane gotowe' if size >= 2048 and supported else 'Sprawdź format lub rozmiar pliku'}")
 
     def create(self):
         try:
@@ -280,10 +287,10 @@ class Creator:
             if not 1 <= steps <= 1_000_000:
                 raise ValueError("Liczba kroków musi być od 1 do 1 000 000.")
             source = Path(self.dataset.get()).expanduser()
-            if not source.is_file() or source.suffix.lower() != ".txt":
-                raise ValueError("Wybierz istniejący plik .txt z danymi treningowymi.")
-            if source.stat().st_size < 512:
-                raise ValueError("Plik jest za mały. Dodaj co najmniej 512 bajtów tekstu.")
+            if not source.is_file() or source.suffix.lower() not in {".txt", ".md", ".jsonl", ".csv"}:
+                raise ValueError("Wybierz plik .txt, .md, .jsonl lub .csv.")
+            if source.stat().st_size < 2048:
+                raise ValueError("Zbiór jest za mały. Minimum techniczne to 2048 bajtów.")
             if int(self.width.get()) % int(self.heads.get()) != 0:
                 raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")
             project = APP_DIR / "ai" / name
@@ -300,12 +307,19 @@ class Creator:
                 "context": int(self.context.get()),
                 "batch_size": int(self.batch.get()),
                 "learning_rate": float(self.learning_rate.get()),
+                "dropout": float(self.dropout.get()),
+                "seed": int(self.seed.get()),
+                "gradient_accumulation": int(self.gradient_accumulation.get()),
+                "eval_interval": max(10, min(500, steps // 50)),
+                "save_interval": max(10, min(500, steps // 50)),
+                "dataset_file": "dataset" + source.suffix.lower(),
+                "resume": True,
                 "status": "training",
             }
             (project / "config.json").write_text(
                 json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8"
             )
-            shutil.copy2(source, project / "dataset.txt")
+            shutil.copy2(source, project / cfg["dataset_file"])
             trainer = Path(__file__).resolve().with_name("ai_trainer.py")
             cmd = [sys.executable, str(trainer), str(project)]
             if sys.platform == "win32":

@@ -86,7 +86,7 @@ class CreatorV2:
         header=tk.Frame(self.root,bg=BG); header.pack(fill="x",padx=24,pady=(18,12))
         self.label(header,"321 AI",21,TEXT,True).pack(side="left")
         self.label(header,"MODEL CREATOR  /  FROM-SCRATCH LAB",8,"#c4b5fd",True).pack(side="left",padx=14,pady=(8,0))
-        self.label(header,"BETA",8,"#c4b5fd",True,bg="#241b3b").pack(side="right",padx=8,pady=8)
+        tk.Label(header,text="BETA",bg="#241b3b",fg="#c4b5fd",font=("Segoe UI",8,"bold"),padx=10,pady=6).pack(side="right",padx=8,pady=8)
         body=tk.Frame(self.root,bg=BG); body.pack(fill="both",expand=True,padx=24)
         # Scrollable settings area
         canvas=tk.Canvas(body,bg=BG,highlightthickness=0); scroll=ttk.Scrollbar(body,orient="vertical",command=canvas.yview)
@@ -114,7 +114,7 @@ class CreatorV2:
         tk.Checkbutton(vis,text="Prywatne repozytorium (zalecane)",variable=self.private,
                        bg=PANEL,fg=TEXT,selectcolor=ALT,activebackground=PANEL,
                        activeforeground=TEXT).pack(side="left")
-        model=self.card(inner,"03  •  Możliwości modelu","Liczby przykładów określają proporcje zadań w jednym modelu tekstowym. Własne pliki danych można dodać niżej.")
+        model=self.card(inner,"03  •  Cele treningu","Wybierz obszary, które chcesz rozwijać. Liczby są zapisywane jako cele/metadane projektu; obecny trener nadal uczy jeden model na wspólnym pliku, więc nie traktuj ich jako gwarantowanej liczby osobno oznaczonych przykładów.")
         model.pack(fill="x",pady=(0,10))
         for task,var in self.tasks.items():
             r=tk.Frame(model,bg=PANEL); r.pack(fill="x",padx=16,pady=4)
@@ -122,7 +122,7 @@ class CreatorV2:
                            selectcolor=ALT,activebackground=PANEL,activeforeground=TEXT).pack(side="left")
             self.label(r,"Liczba przykładów",8,MUTED).pack(side="left",padx=(18,6))
             self.entry(r,self.counts[task],10).pack(side="left",ipady=5)
-        self.label(model,"Generowanie obrazów: osobny model i pipeline. Nie włączamy fikcyjnego przełącznika — ta funkcja nie jest jeszcze zaimplementowana.",8,"#e7bb75",wraplength=900,justify="left").pack(anchor="w",padx=16,pady=(7,12))
+        self.label(model,"Obrazy: osobny autorski model i pipeline będą osobnym etapem. Nie włączamy tu niedziałającego przełącznika.",8,"#e7bb75",wraplength=900,justify="left").pack(anchor="w",padx=16,pady=(7,12))
         data=self.card(inner,"04  •  Dane treningowe","Wybierz własny TXT / MD / JSONL / CSV. Gdy nic nie wybierzesz, kreator użyje dołączonego zestawu startowego, który służy do testów technicznych, nie do uzyskania jakości komercyjnej.")
         data.pack(fill="x",pady=(0,10))
         dr=tk.Frame(data,bg=PANEL); dr.pack(fill="x",padx=16,pady=(0,12))
@@ -238,12 +238,15 @@ class CreatorV2:
             self.append_log(f"Zadania: {counts} | kroki: {steps}")
             self.root.update_idletasks()
             trainer=Path(__file__).resolve().with_name("ai_trainer.py")
+            self.publish_repo=full_repo
+            self.publish_private=self.private.get()
+            self.publish_enabled=self.github_state.get().startswith("Połączono")
             self.process=subprocess.Popen([sys.executable,"-u",str(trainer),str(project)],
                 cwd=project,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
                 text=True,encoding="utf-8",errors="replace",bufsize=1)
             threading.Thread(target=self._read_output,daemon=True).start()
             self.root.after(150,self._poll)
-            if self.github_state.get().startswith("Połączono"):
+            if self.publish_enabled:
                 threading.Thread(target=self._publish_after_training,daemon=True).start()
         except FileExistsError: messagebox.showerror("321 AI","Folder tego modelu już istnieje.")
         except (ValueError,OSError) as exc: messagebox.showerror("321 AI",str(exc))
@@ -283,7 +286,7 @@ class CreatorV2:
             # Wait for process completion without touching Tk from this thread.
             self.process.wait()
             if self.process.returncode==0:
-                result=github_integration.publish_repository(self.project,self.repo.get().strip() or self.project.name,self.private.get())
+                result=github_integration.publish_repository(self.project,self.publish_repo,self.publish_private)
                 self.events.put(("log","GitHub: "+result))
         except Exception as exc: self.events.put(("log","GitHub publikacja: "+str(exc)))
 

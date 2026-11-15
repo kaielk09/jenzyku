@@ -243,8 +243,8 @@ class Creator:
                  fg=MUTED, font=("Segoe UI", 9)).pack(side="left")
         def save_text():
             value = editor.get("1.0", "end-1c").strip()
-            if len(value.encode("utf-8")) < 512:
-                messagebox.showwarning("Za mało danych", "Wklej co najmniej 512 bajtów tekstu.", parent=win)
+            if len(value.encode("utf-8")) < 2048:
+                messagebox.showwarning("Za mało danych", "Wklej co najmniej 2048 bajtów tekstu.", parent=win)
                 return
             try:
                 folder = APP_DIR / "ai_datasets"
@@ -270,7 +270,7 @@ class Creator:
     def _update_dataset_info(self):
         raw = self.dataset.get().strip()
         if not raw:
-            self.dataset_info.set("Nie wybrano pliku TXT")
+            self.dataset_info.set("Nie wybrano zbioru danych")
             return
         path = Path(raw).expanduser()
         if not path.is_file():

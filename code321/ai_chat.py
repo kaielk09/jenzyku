@@ -44,7 +44,8 @@ class Chat:
             except ImportError:
                 from code321.ai_model import TinyGPT
             saved = torch.load(self.project / "model" / "model.pt", map_location="cpu", weights_only=True)
-            self.model = TinyGPT(**saved["config"])\n            self.context = int(saved["config"].get("context", 128))
+            self.model = TinyGPT(**saved["config"])
+            self.context = int(saved["config"].get("context", 128))
             self.model.load_state_dict(saved["state_dict"])
             self.model.eval()
             self.torch = torch

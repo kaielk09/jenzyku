@@ -54,6 +54,7 @@ class CreatorV2:
         }
         self.events=queue.Queue(); self.process=None; self.project=None; self.publisher_thread=None; self.dataset_thread=None
         self._style(); self._build(); self.refresh_github()
+        self.root.protocol("WM_DELETE_WINDOW",self.close)
 
     def _style(self):
         st=ttk.Style(); st.theme_use("clam")
@@ -187,8 +188,10 @@ class CreatorV2:
         if path: self.image_output.set(path)
 
     def start_image_training(self):
-        if self.process and self.process.poll() is None:
-            messagebox.showwarning("321 AI","Inny proces treningowy lub serwer jest już uruchomiony."); return
+        if ((self.process and self.process.poll() is None) or
+            (self.publisher_thread and self.publisher_thread.is_alive()) or
+            (self.dataset_thread and self.dataset_thread.is_alive())):
+            messagebox.showwarning("321 AI","Inny proces treningowy, pobieranie lub publikacja jest w toku."); return
         source=self.image_source.get().strip()
         if not source or not Path(source).is_dir():
             messagebox.showwarning("321 AI","Wybierz istniejący folder z obrazami."); return
@@ -219,8 +222,21 @@ class CreatorV2:
             self.api_process=subprocess.Popen([sys.executable,"-m","code321.ai_api",str(self.project),"--host","127.0.0.1","--port","8000"],
                 cwd=Path(__file__).resolve().parent.parent,env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
             self.status.set("API uruchamiane na http://127.0.0.1:8000")
-            messagebox.showinfo("321 AI API","API uruchamia się lokalnie. Sprawdź http://127.0.0.1:8000/health")
+            self.root.after(700,self._check_api_start)
         except OSError as exc: messagebox.showerror("321 AI API",str(exc))
+
+    def _check_api_start(self):
+        if self.api_process and self.api_process.poll() is None:
+            self.status.set("API działa na http://127.0.0.1:8000")
+            messagebox.showinfo("321 AI API","API działa lokalnie. Health: http://127.0.0.1:8000/health")
+        else:
+            self.status.set("API nie wystartowało — sprawdź instalację dodatków [api] i logi systemowe.")
+            messagebox.showerror("321 AI API","Serwer zakończył pracę podczas uruchamiania. Sprawdź instalację dodatków [api].")
+
+    def close(self):
+        if self.api_process and self.api_process.poll() is None:
+            self.api_process.terminate()
+        self.root.destroy()
 
     def stop_api(self):
         if self.api_process and self.api_process.poll() is None:
@@ -279,8 +295,10 @@ class CreatorV2:
             self.progress.set(done*100/total)
 
     def create_and_train(self):
-        if self.process and self.process.poll() is None:
-            messagebox.showwarning("321 AI","Trening już trwa."); return
+        if ((self.process and self.process.poll() is None) or
+            (self.publisher_thread and self.publisher_thread.is_alive()) or
+            (self.dataset_thread and self.dataset_thread.is_alive())):
+            messagebox.showwarning("321 AI","Trwa trening, pobieranie danych lub publikowanie poprzedniego projektu."); return
         try:
             name=safe_name(self.name.get()); repo=self.repo.get().strip()
             if not repo: repo=name

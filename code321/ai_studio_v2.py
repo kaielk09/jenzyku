@@ -50,7 +50,7 @@ class CreatorV2:
             "rozmowa":tk.StringVar(value="2000"),
             "rozumowanie":tk.StringVar(value="1000"),
         }
-        self.events=queue.Queue(); self.process=None; self.project=None; self.publisher_thread=None
+        self.events=queue.Queue(); self.process=None; self.project=None; self.publisher_thread=None; self.dataset_thread=None
         self._style(); self._build(); self.refresh_github()
 
     def _style(self):
@@ -197,7 +197,9 @@ class CreatorV2:
                 self.events.put(("dataset",str(path)))
             except Exception as exc:
                 self.events.put(("dataset_error",str(exc)))
-        threading.Thread(target=worker,daemon=True).start()
+        self.dataset_thread=threading.Thread(target=worker,daemon=True)
+        self.dataset_thread.start()
+        self.root.after(150,self._poll)
 
     def browse(self):
         path=filedialog.askopenfilename(filetypes=[("Dane treningowe","*.txt *.md *.jsonl *.csv"),("Wszystkie","*.*")])
@@ -274,7 +276,7 @@ class CreatorV2:
                 text=True,encoding="utf-8",errors="replace",bufsize=1)
             threading.Thread(target=self._read_output,daemon=True).start()
             self.root.after(150,self._poll)
-            if self.publish_enabled:
+            if self.publish_enabled or self.hf_publish_repo:
                 self.publisher_thread=threading.Thread(target=self._publish_after_training,daemon=True)
                 self.publisher_thread.start()
         except FileExistsError: messagebox.showerror("321 AI","Folder tego modelu już istnieje.")
@@ -305,7 +307,10 @@ class CreatorV2:
                         messagebox.showinfo("321 AI","Trening zakończony. Wagi i konfiguracja są w folderze model na pulpicie.")
                     else: self.status.set(f"Trening zakończył się błędem ({value}). Sprawdź logi.")
         except queue.Empty: pass
-        if (self.process and self.process.poll() is None) or (self.publisher_thread and self.publisher_thread.is_alive()): self.root.after(150,self._poll)
+        if ((self.process and self.process.poll() is None) or
+            (self.publisher_thread and self.publisher_thread.is_alive()) or
+            (self.dataset_thread and self.dataset_thread.is_alive())):
+            self.root.after(150,self._poll)
 
     def _export_model(self):
         if not self.project: return
@@ -323,8 +328,9 @@ class CreatorV2:
             # Wait for process completion without touching Tk from this thread.
             self.process.wait()
             if self.process.returncode==0:
-                result=github_integration.publish_repository(self.project,self.publish_repo,self.publish_private)
-                self.events.put(("log","GitHub: "+result))
+                if self.publish_enabled:
+                    result=github_integration.publish_repository(self.project,self.publish_repo,self.publish_private)
+                    self.events.put(("log","GitHub: "+result))
                 if self.hf_publish_repo:
                     from .ai_hub import publish_model
                     hf_url=publish_model(self.project,self.hf_publish_repo,private=True)

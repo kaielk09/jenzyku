@@ -77,7 +77,7 @@ def run_script(name: str) -> int:
 
 def ai_command(args: list[str]) -> int:
     if not args:
-        from .ai_app import main as creator_main
+        from .ai_studio_v2 import main as creator_main
         return creator_main()
     action, *rest = args
     if action in {"help", "pomoc"}:

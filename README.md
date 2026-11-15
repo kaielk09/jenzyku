@@ -143,8 +143,18 @@ Dokumentacja: [docs/AI_STUDIO.md](docs/AI_STUDIO.md).
 
 Nowy kreator uruchamiany przez `321 ai` lub z 321code Studio. Łączy się z GitHub przez oficjalne GitHub CLI (`gh`), tworzy lokalny projekt na pulpicie w `321 AI Models`, pokazuje logi treningu w GUI i po zakończeniu może utworzyć repozytorium GitHub. Domyślnie repozytorium jest prywatne.
 
-Wymagane do publikacji: Git, GitHub CLI oraz zalogowane konto (`gh auth login --web`). 321code nie przechowuje haseł ani tokenów GitHub.
+Wymagane do publikacji na GitHub: Git, GitHub CLI i logowanie `gh auth login --web`. 321code nie przechowuje haseł ani tokenów GitHub. Dla Hugging Face ustaw `HF_TOKEN` jako zmienną środowiskową; token nie jest zapisywany w projekcie.
+
+Dodatki opcjonalne: `py -m pip install ".[all-ai]"` (PyTorch, API HTTP, Hugging Face, obrazy). Możesz instalować `[api]`, `[huggingface]` lub `[images]` osobno.
+
+```bat
+321 ai serve "C:\sciezka\do\modelu"
+321 ai publish-hf "C:\sciezka\do\modelu" --repo-id TWOJE_KONTO/MODEL
+321 ai download-dataset OWNER/DATASET dataset.jsonl --max-examples 100000
+321 ai train-images "C:\sciezka\do\obrazow" --output "C:\modele\321-image"
+321 ai generate-image "C:\modele\321-image" --count 1
+```
 
 Dokumentacja: [docs/AI_CREATOR_V2.md](docs/AI_CREATOR_V2.md).
 
-**Aktualne ograniczenia:** to nadal eksperymentalny model tekstowy byte-level. Liczby przy zadaniach zapisują cele w konfiguracji, ale aktualny trener nie rozdziela jeszcze danych i strat według tych kategorii. Wbudowany zbiór startowy jest demonstracyjny. Autorskie generowanie obrazów nie jest jeszcze zaimplementowane.
+**Aktualne ograniczenia:** model tekstowy jest eksperymentalnym byte-level Transformerem trenowanym od zera. Model obrazowy jest eksperymentalnym, bezwarunkowym DDPM 64×64 — nie generuje jeszcze obrazów na podstawie promptu. API HTTP obsługuje podstawowy chat completions i wymaga klucza przy nasłuchiwaniu poza localhost. CI nie zastępuje testów długiego treningu na rzeczywistym GPU.

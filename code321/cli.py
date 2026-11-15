@@ -77,7 +77,7 @@ def run_script(name: str) -> int:
 
 def ai_command(args: list[str]) -> int:
     if not args:
-        from .ai_app import main as creator_main
+        from .ai_studio_v2 import main as creator_main
         return creator_main()
     action, *rest = args
     if action in {"help", "pomoc"}:
@@ -85,6 +85,12 @@ def ai_command(args: list[str]) -> int:
         print("  321 ai                 Otwórz kreator modelu")
         print("  321 ai train <folder>  Wytrenuj model z dataset.txt")
         print("  321 ai chat <folder>   Otwórz okno czatu wytrenowanego modelu")
+        print("  321 ai serve <folder>  Uruchom lokalne API HTTP")
+        print("  321 ai web             Otwórz panel WWW 321 AI Creator")
+        print("  321 ai publish-hf <folder> --repo-id USER/MODEL")
+        print("  321 ai download-dataset USER/DATASET <plik.jsonl>")
+        print("  321 ai train-images <folder-obrazow> --output <folder-modelu>")
+        print("  321 ai generate-image <folder-modelu> --count 1")
         return 0
     if action == "train":
         from .ai_trainer import main as trainer_main
@@ -92,6 +98,42 @@ def ai_command(args: list[str]) -> int:
     if action == "chat":
         from .ai_chat import main as chat_main
         return chat_main(rest)
+    if action == "serve":
+        from .ai_api import main as api_main
+        return api_main(rest)
+    if action == "web":
+        from .ai_web_studio import main as web_main
+        return web_main(rest)
+    if action == "publish-hf":
+        import argparse
+        from .ai_hub import publish_model
+        parser=argparse.ArgumentParser(prog="321 ai publish-hf")
+        parser.add_argument("project"); parser.add_argument("--repo-id",required=True)
+        parser.add_argument("--public",action="store_true")
+        opts=parser.parse_args(rest)
+        try:
+            print("Model opublikowany: "+publish_model(opts.project,opts.repo_id,private=not opts.public))
+            return 0
+        except Exception as exc:
+            error(str(exc)); return 2
+    if action == "download-dataset":
+        import argparse
+        from .ai_hub import download_dataset
+        parser=argparse.ArgumentParser(prog="321 ai download-dataset")
+        parser.add_argument("repo_id"); parser.add_argument("output")
+        parser.add_argument("--split",default="train"); parser.add_argument("--max-examples",type=int,default=10000)
+        opts=parser.parse_args(rest)
+        try:
+            path,note=download_dataset(opts.repo_id,opts.output,opts.split,opts.max_examples)
+            success(note); info(f"Plik: {path}"); return 0
+        except Exception as exc:
+            error(str(exc)); return 2
+    if action == "train-images":
+        from .ai_image_trainer import main as image_train_main
+        return image_train_main(rest)
+    if action == "generate-image":
+        from .ai_image_generate import main as image_generate_main
+        return image_generate_main(rest)
     error("Nieznana komenda AI. Wpisz: 321 ai help")
     return 2
 

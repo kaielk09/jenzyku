@@ -8,4 +8,11 @@ dist/
 .pytest_cache/
 .DS_Store
 Thumbs.db
-\n.build-venv/\n*.spec\n
+.env
+.env.*
+!.env.example
+*.pt
+*.pth
+checkpoints/
+321 AI Models/
+321-generated-images/

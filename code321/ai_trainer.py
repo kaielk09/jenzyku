@@ -69,7 +69,11 @@ def main(argv=None):
         return 2
     try:
         cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
-        raw = load_training_text(project, cfg)
+        try:
+            from .ai_dataset import load_task_training_text
+        except ImportError:
+            from code321.ai_dataset import load_task_training_text
+        raw, dataset_report = load_task_training_text(project, cfg)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"Błąd danych treningowych: {exc}")
         return 2
@@ -200,6 +204,8 @@ def main(argv=None):
     print(f"Urządzenie: {device.upper()} | Parametry: {parameters:,} | Dane: {len(data):,} bajtów")
     print(f"Architektura: {width=} {layers=} {heads=} {context=} {dropout=}")
     print(f"Trening: {steps:,} kroków | batch: {batch} × akumulacja: {grad_accum}")
+    for report_line in dataset_report:
+        print(report_line)
     print("Checkpoint: co", save_interval, "kroków | Walidacja:", eval_interval)
     print("=" * 68, flush=True)
 

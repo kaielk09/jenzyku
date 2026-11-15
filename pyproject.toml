@@ -12,11 +12,17 @@ license = { text = "MIT" }
 authors = [{ name = "321code contributors" }]
 dependencies = []
 
+[project.optional-dependencies]
+api = ["torch>=2.2", "fastapi>=0.110", "uvicorn[standard]>=0.27", "python-multipart>=0.0.9"]
+huggingface = ["torch>=2.2", "huggingface_hub>=0.23", "datasets>=2.19"]
+images = ["torch>=2.2", "pillow>=10", "numpy>=1.26"]
+all-ai = ["torch>=2.2", "fastapi>=0.110", "uvicorn[standard]>=0.27", "python-multipart>=0.0.9", "huggingface_hub>=0.23", "datasets>=2.19", "pillow>=10", "numpy>=1.26"]
+
 [project.scripts]
 321 = "code321.cli:main"
 
 [tool.setuptools]
-packages = ["code321"]
+packages = ["code321", "code321.data"]
 
 [tool.setuptools.package-data]
-code321 = ["commands.json"]
+code321 = ["commands.json", "data/*.txt"]

@@ -37,19 +37,19 @@ API_CATALOG: dict[str, tuple[str, ...]] = {
 }
 
 INDICATORS: tuple[tuple[str, str, str], ...] = (
-    ("Persistence / autostart", r"\\currentversion\\run|\\startup\\|schtasks\\s+/create", "high"),
-    ("PowerShell with hidden window", r"powershell.{0,100}(-windowstyle\\s+hidden|-w\\s+hidden)", "high"),
-    ("Encoded PowerShell command", r"powershell.{0,100}-enc(odedcommand)?\\s+[a-z0-9+/=]{20,}", "high"),
-    ("Credential/browser data access hint", r"login data|cookies\\.sqlite|\\bpasswords?\\b.{0,40}decrypt", "medium"),
-    ("Suspicious download-and-run pattern", r"(invoke-webrequest|downloadstring|urlopen).{0,160}(start-process|\\biex\\b|subprocess)", "high"),
-    ("Dynamic code execution", r"\\beval\\s*\\(|new\\s+Function\\s*\\(|exec\\s*\\(", "medium"),
-    ("Obfuscated content marker", r"frombase64string|\\batob\\s*\\(|base64\\.b64decode", "low"),
+    ("Persistence / autostart", r"\\currentversion\\run|\\startup\\|schtasks\s+/create", "high"),
+    ("PowerShell with hidden window", r"powershell.{0,100}(-windowstyle\s+hidden|-w\s+hidden)", "high"),
+    ("Encoded PowerShell command", r"powershell.{0,100}-enc(odedcommand)?\s+[a-z0-9+/=]{20,}", "high"),
+    ("Credential/browser data access hint", r"login data|cookies\.sqlite|\bpasswords?\b.{0,40}decrypt", "medium"),
+    ("Suspicious download-and-run pattern", r"(invoke-webrequest|downloadstring|urlopen).{0,160}(start-process|\biex\b|subprocess)", "high"),
+    ("Dynamic code execution", r"\beval\s*\(|new\s+Function\s*\(|exec\s*\(", "medium"),
+    ("Obfuscated content marker", r"frombase64string|\batob\s*\(|base64\.b64decode", "low"),
 )
 COMPILED_INDICATORS = tuple((name, re.compile(pattern, re.I), severity) for name, pattern, severity in INDICATORS)
 SECRET_PATTERNS = (
     re.compile(r"sk-[A-Za-z0-9_-]{16,}"),
     re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}"),
-    re.compile(r"(?i)(api[_-]?key|secret|token)\\s*[:=]\\s*['\"][^'\"\\s]{8,}"),
+    re.compile(r"""(?i)(api[_-]?key|secret|token)\s*[:=]\s*['"][^'"\s]{8,}"""),
 )
 
 

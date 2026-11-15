@@ -247,7 +247,8 @@ class CreatorV2:
             threading.Thread(target=self._read_output,daemon=True).start()
             self.root.after(150,self._poll)
             if self.publish_enabled:
-                self.publisher_thread=threading.Thread(target=self._publish_after_training,daemon=True)\n                self.publisher_thread.start()
+                self.publisher_thread=threading.Thread(target=self._publish_after_training,daemon=True)
+                self.publisher_thread.start()
         except FileExistsError: messagebox.showerror("321 AI","Folder tego modelu już istnieje.")
         except (ValueError,OSError) as exc: messagebox.showerror("321 AI",str(exc))
 

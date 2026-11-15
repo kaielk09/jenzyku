@@ -1,7 +1,10 @@
 """321code Studio: a polished desktop hub for projects, AI and security."""
 from __future__ import annotations
 
+import contextlib
+import io
 import os
+import re
 import subprocess
 import sys
 import tkinter as tk
@@ -227,21 +230,119 @@ class Studio:
         self._button(web, "Analizuj stronę", scan_url, True).pack(anchor="e", padx=18, pady=(0, 16))
 
     def _page_language(self):
-        self._label(self.body, "Język 321code", 22, TEXT, True).pack(anchor="w", pady=(8, 4))
-        self._label(self.body, "Twórz i uruchamiaj programy .321.", 10, MUTED).pack(anchor="w", pady=(0, 18))
-        card = self._card(self.body, "Otwórz plik .321", "Uruchom interpreter dla wybranego programu.")
-        card.pack(fill="x")
-        def run_file():
-            path = filedialog.askopenfilename(filetypes=[("321code", "*.321"), ("Wszystkie pliki", "*.*")])
+        self.editor_path = None
+        toolbar = tk.Frame(self.body, bg=BG)
+        toolbar.pack(fill="x", pady=(4, 10))
+        self._label(toolbar, "Edytor 321code", 18, TEXT, True).pack(side="left")
+        self._button(toolbar, "Nowy", self.editor_new).pack(side="right", padx=4)
+        self._button(toolbar, "Otwórz", self.editor_open).pack(side="right", padx=4)
+        self._button(toolbar, "Zapisz", self.editor_save).pack(side="right", padx=4)
+        self._button(toolbar, "▶ Uruchom", self.editor_run, True).pack(side="right", padx=4)
+        self.editor_file_label = self._label(self.body, "Nowy plik • niezapisany", 8, MUTED)
+        self.editor_file_label.pack(anchor="w", pady=(0, 6))
+        area = tk.Frame(self.body, bg=PANEL, highlightthickness=1, highlightbackground=BORDER)
+        area.pack(fill="both", expand=True)
+        self.editor = tk.Text(area, bg="#11111b", fg=TEXT, insertbackground="white",
+                              selectbackground="#493477", wrap="none", undo=True,
+                              relief="flat", font=("Consolas", 11), padx=14, pady=12,
+                              tabs=("4c",))
+        yscroll = ttk.Scrollbar(area, command=self.editor.yview)
+        xscroll = ttk.Scrollbar(area, command=self.editor.xview, orient="horizontal")
+        self.editor.configure(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
+        self.editor.grid(row=0, column=0, sticky="nsew")
+        yscroll.grid(row=0, column=1, sticky="ns")
+        xscroll.grid(row=1, column=0, sticky="ew")
+        area.grid_rowconfigure(0, weight=1)
+        area.grid_columnconfigure(0, weight=1)
+        self.editor.tag_configure("keyword", foreground="#c4a7ff")
+        self.editor.tag_configure("string", foreground="#8fe0b2")
+        self.editor.tag_configure("comment", foreground="#77738a")
+        self.editor.insert("1.0", 'let name = "Świecie"\nprint "Witaj, " + name\n')
+        self.editor.bind("<KeyRelease>", lambda _event: self.root.after_idle(self.editor_highlight))
+        output_card = tk.Frame(self.body, bg=PANEL, highlightthickness=1, highlightbackground=BORDER)
+        output_card.pack(fill="x", pady=(10, 0))
+        self._label(output_card, "WYNIK / KONSOLA", 8, MUTED, True).pack(anchor="w", padx=12, pady=(8, 2))
+        self.editor_output = tk.Text(output_card, height=5, bg="#101018", fg="#b9f5d2",
+                                     insertbackground=TEXT, wrap="word", relief="flat",
+                                     font=("Consolas", 9), padx=12, pady=8)
+        self.editor_output.pack(fill="x", padx=10, pady=(0, 10))
+        self.editor_highlight()
+
+    def editor_highlight(self):
+        if not hasattr(self, "editor"):
+            return
+        source = self.editor.get("1.0", "end-1c")
+        for tag in ("keyword", "string", "comment"):
+            self.editor.tag_remove(tag, "1.0", "end")
+        patterns = {
+            "keyword": r"\\b(let|set|print|if|else|while|for|in|def|return|import)\\b",
+            "string": r'"(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'',
+            "comment": r"(?m)#.*$",
+        }
+        for tag, pattern in patterns.items():
+            for match in re.finditer(pattern, source):
+                start = f"1.0+{match.start()}c"
+                finish = f"1.0+{match.end()}c"
+                self.editor.tag_add(tag, start, finish)
+
+    def editor_new(self):
+        self.editor_path = None
+        self.editor.delete("1.0", "end")
+        self.editor_file_label.configure(text="Nowy plik • niezapisany")
+        self.editor_output.delete("1.0", "end")
+        self.editor_highlight()
+
+    def editor_open(self):
+        path = filedialog.askopenfilename(filetypes=[("Pliki 321code", "*.321"), ("Wszystkie pliki", "*.*")])
+        if not path:
+            return
+        try:
+            self.editor.delete("1.0", "end")
+            self.editor.insert("1.0", Path(path).read_text(encoding="utf-8"))
+            self.editor_path = Path(path)
+            self.editor_file_label.configure(text=str(self.editor_path))
+            self.editor_highlight()
+            self.status.set("Otwarto plik 321code")
+        except (OSError, UnicodeError) as exc:
+            messagebox.showerror("Edytor 321code", str(exc))
+
+    def editor_save(self):
+        if self.editor_path is None:
+            path = filedialog.asksaveasfilename(
+                title="Zapisz program 321code", defaultextension=".321",
+                filetypes=[("Pliki 321code", "*.321")],
+            )
             if not path:
-                return
+                return False
+            self.editor_path = Path(path)
+        try:
+            self.editor_path.write_text(self.editor.get("1.0", "end-1c") + "\\n", encoding="utf-8")
+            self.editor_file_label.configure(text=str(self.editor_path))
+            self.status.set("Zapisano " + self.editor_path.name)
+            return True
+        except OSError as exc:
+            messagebox.showerror("Edytor 321code", str(exc))
+            return False
+
+    def editor_run(self):
+        if not self.editor_save():
+            return
+        output = io.StringIO()
+        errors = io.StringIO()
+        try:
             from .runtime import run_file as execute
-            code = execute(Path(path))
-            self.status.set("Program zakończył działanie" if code == 0 else "Program zakończył się błędem")
-        self._button(card, "Wybierz plik i uruchom", run_file, True).pack(anchor="e", padx=18, pady=(0, 16))
-        docs = self._card(self.body, "Dokumentacja", "Dokumentacja składni znajduje się w docs/SYNTAX.md w repozytorium.")
-        docs.pack(fill="x", pady=12)
-        self._button(docs, "Otwórz repozytorium", lambda: self.open_url("https://github.com/kaielk09/jenzyku")).pack(anchor="e", padx=18, pady=(0, 16))
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                code = execute(self.editor_path)
+            result = output.getvalue() + errors.getvalue()
+            if not result:
+                result = "Program zakończył się bez komunikatów."
+            self.editor_output.delete("1.0", "end")
+            self.editor_output.insert("1.0", result)
+            self.status.set("Program zakończony poprawnie" if code == 0 else "Program zakończył się błędem")
+        except Exception as exc:
+            self.editor_output.delete("1.0", "end")
+            self.editor_output.insert("1.0", str(exc))
+            self.status.set("Błąd uruchamiania")
 
     def _page_settings(self):
         self._label(self.body, "Ustawienia", 22, TEXT, True).pack(anchor="w", pady=(8, 4))

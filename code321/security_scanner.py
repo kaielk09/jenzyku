@@ -223,7 +223,7 @@ def scan_website(url: str, seconds: float = MAX_SECONDS) -> dict[str, Any]:
         "url": request_url, "final_url": final_url, "status": status,
         "https": urllib.parse.urlparse(final_url).scheme == "https",
         "security_headers": {label: key in headers for key, label in security_headers.items()},
-        "apis": analysis["apis"], "findings": analysis["findings"],
+        "apis": analysis["apis"], "findings": ([{"items": analysis["findings"]}] if analysis["findings"] else []),
         "external_domains": sorted(domains)[:50],
         "content_truncated": len(body) >= MAX_WEB_BYTES,
         "elapsed": round(time.monotonic() - started, 2),

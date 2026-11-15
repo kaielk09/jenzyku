@@ -175,13 +175,13 @@ class Creator:
             self._label(col, label, size=8, weight="bold").pack(anchor="w", pady=(0, 4))
             ttk.Combobox(col, textvariable=variable, values=values, state="readonly").pack(fill="x", ipady=3)
 
-        hardware = self._card(content, "03  •  Sprzęt", "Wybór jest informacyjny. Dostępne urządzenie obliczeniowe wykrywa PyTorch.")
+        hardware = self._card(content, "03  •  Sprzęt", "Auto wykrywa obsługiwane urządzenie. CPU działa wolniej; CUDA wymaga zgodnego PyTorch i karty NVIDIA.")
         hardware.pack(fill="x", pady=(0, 12))
         hwrow = tk.Frame(hardware, bg=PANEL)
         hwrow.pack(fill="x", padx=18, pady=(0, 16))
         for label, variable, values in (
             ("URZĄDZENIE", self.machine, ("Automatycznie", "Komputer", "Laptop")),
-            ("GPU (OPCJONALNIE)", self.gpu, ("Auto", "NVIDIA", "AMD", "Intel", "CPU")),
+            ("URZĄDZENIE OBLICZENIOWE", self.gpu, ("Auto", "CPU", "CUDA (NVIDIA)", "MPS (Apple)")),
         ):
             col = tk.Frame(hwrow, bg=PANEL)
             col.pack(side="left", fill="x", expand=True, padx=(0, 12))
@@ -299,7 +299,7 @@ class Creator:
                 "name": name,
                 "training_steps": steps,
                 "gpu_label": self.gpu.get().strip() or "Auto",
-                "device_preference": "auto",
+                "device_preference": self.gpu.get().lower(),
                 "machine_type": self.machine.get(),
                 "width": int(self.width.get()),
                 "layers": int(self.layers.get()),

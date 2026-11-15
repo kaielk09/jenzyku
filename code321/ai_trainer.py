@@ -116,9 +116,25 @@ def main(argv=None):
         print("Parametry poza dozwolonym zakresem lub dane krótsze niż kontekst.")
         return 2
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    preference = str(cfg.get("device_preference", "auto")).strip().lower()
+    cuda_available = torch.cuda.is_available()
+    mps_available = bool(getattr(torch.backends, "mps", None) and torch.backends.mps.is_available())
+    if preference in {"cpu"}:
+        device = "cpu"
+    elif preference in {"cuda", "cuda (nvidia)", "nvidia"}:
+        if not cuda_available:
+            print("Wybrano CUDA, ale PyTorch nie wykrywa zgodnej karty NVIDIA/CUDA.")
+            return 2
+        device = "cuda"
+    elif preference in {"mps", "mps (apple)"}:
+        if not mps_available:
+            print("Wybrano MPS, ale PyTorch nie wykrywa obsługi Apple Silicon.")
+            return 2
+        device = "mps"
+    else:
+        device = "cuda" if cuda_available else "mps" if mps_available else "cpu"
     torch.manual_seed(seed)
-    if torch.cuda.is_available():
+    if device == "cuda":
         torch.cuda.manual_seed_all(seed)
         try:
             torch.cuda.set_per_process_memory_fraction(0.85)
@@ -213,7 +229,14 @@ def main(argv=None):
 
     model_dir = project / "model"
     model_dir.mkdir(parents=True, exist_ok=True)
-    chosen = best_path if best_path.exists() else latest
+    chosen = latest
+    if best_path.exists():
+        try:
+            candidate = torch.load(best_path, map_location=device, weights_only=True)
+            if candidate.get("config") == model_cfg:
+                chosen = best_path
+        except Exception:
+            pass
     final = torch.load(chosen, map_location=device, weights_only=True)
     model.load_state_dict(final["state_dict"])
     model.cpu()

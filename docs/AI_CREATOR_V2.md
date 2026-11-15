@@ -30,14 +30,14 @@ Automatyczny filtr dopuszcza licencje MIT, Apache-2.0, BSD-2/3-Clause, CC0-1.0, 
 py -m pip install ".[api]"
 321 ai serve "C:\sciezka\do\modelu"
 ```
-Domyślnie API słucha tylko na `127.0.0.1:8000`. Endpointy: `GET /health`, `GET /v1/models`, `POST /v1/chat/completions`.
+Domyślnie API słucha tylko na `127.0.0.1:8000`. Endpointy: `GET /health`, `GET /v1/models`, `POST /v1/chat/completions` oraz opcjonalnie `POST /v1/images/sample`.
 
 Aby udostępnić API w sieci, ustaw klucz i binduj host:
 ```bat
 set 321_AI_API_KEY=ustaw_dlugi_losowy_klucz
 321 ai serve "C:\sciezka\do\modelu" --host 0.0.0.0 --port 8000
 ```
-Klient wysyła `Authorization: Bearer TWÓJ_KLUCZ`. Serwer odmawia startu poza localhost bez klucza. Nie wystawiaj portu publicznie bez TLS, zapory, limitów żądań i reverse proxy. API nie obsługuje jeszcze streamingu ani generowania obrazów.
+Klient wysyła `Authorization: Bearer TWÓJ_KLUCZ`. Serwer odmawia startu poza localhost bez klucza. Nie wystawiaj portu publicznie bez TLS, zapory, limitów żądań i reverse proxy. API nie obsługuje jeszcze streamingu. Endpoint obrazowy zwraca bezwarunkowe próbki 64×64 (bez promptu); wymaga wytrenowanego checkpointu i zmiennej `321_AI_IMAGE_MODEL` wskazującej folder lub plik `image_model.pt`.
 
 ## Publikowanie modelu na Hugging Face
 Ustaw `HF_TOKEN` jako zmienną środowiskową (nie zapisuj go w repo ani config.json):

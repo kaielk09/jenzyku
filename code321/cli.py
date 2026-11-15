@@ -135,7 +135,7 @@ def security_command(args: list[str]) -> int:
 
 
 def show_help() -> None:
-    print(paint(f"321code {__version__} — własny język i narzędzia", "purple"))
+    print(paint(f"321code {__version__} — język, AI i narzędzia", "purple"))
     print(paint("Użycie: 321 <komenda> [argumenty]", "cyan"))
     print("\nKomendy:")
     for item in load_catalogue()["commands"]:
@@ -169,6 +169,9 @@ def main(argv: list[str] | None = None) -> int:
         return run_script(cmd)
     if cmd == "ai":
         return ai_command(ns.args)
+    if cmd in {"studio", "gui", "app"}:
+        from .studio import main as studio_main
+        return studio_main()
     if cmd in {"cd", "sprawdź", "sprawdz"}:
         return security_command([cmd, *ns.args])
     if cmd in {"install", "init", "clear"}:

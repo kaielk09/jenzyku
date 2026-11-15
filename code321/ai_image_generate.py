@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-def generate(checkpoint: str | Path, output: str | Path, count: int=1, device: str="auto", seed: int|None=None):
+def sample_images(checkpoint: str | Path, count: int=1, device: str="auto", seed: int|None=None):
     import torch
     from PIL import Image
     import numpy as np
@@ -21,10 +21,9 @@ def generate(checkpoint: str | Path, output: str | Path, count: int=1, device: s
     previous=torch.cat((torch.ones(1,device=device),abar[:-1]))
     posterior_var=betas*(1-previous)/(1-abar)
     if seed is not None: torch.manual_seed(seed)
-    out=Path(output).expanduser().resolve(); out.mkdir(parents=True,exist_ok=True)
-    paths=[]
+    images=[]
     with torch.inference_mode():
-        for index in range(1,count+1):
+        for _ in range(count):
             x=torch.randn(1,3,64,64,device=device)
             for i in reversed(range(steps)):
                 t=torch.full((1,),float(i),device=device)
@@ -32,8 +31,15 @@ def generate(checkpoint: str | Path, output: str | Path, count: int=1, device: s
                 x=(x-(betas[i]/torch.sqrt(1-abar[i]))*eps)/torch.sqrt(alphas[i])
                 if i>0: x=x+torch.sqrt(posterior_var[i])*torch.randn_like(x)
             arr=((x[0].clamp(-1,1)+1)*127.5).byte().permute(1,2,0).cpu().numpy()
-            image=Image.fromarray(np.asarray(arr,dtype=np.uint8),"RGB")
-            path=out/f"321-ai-image-{index:02d}.png"; image.save(path); paths.append(path)
+            images.append(Image.fromarray(np.asarray(arr,dtype=np.uint8),"RGB"))
+    return images
+
+def generate(checkpoint: str | Path, output: str | Path, count: int=1, device: str="auto", seed: int|None=None):
+    images=sample_images(checkpoint,count,device,seed)
+    out=Path(output).expanduser().resolve(); out.mkdir(parents=True,exist_ok=True)
+    paths=[]
+    for index,image in enumerate(images,1):
+        path=out/f"321-ai-image-{index:02d}.png"; image.save(path); paths.append(path)
     return paths
 
 def main(argv=None):

@@ -61,8 +61,10 @@ def publish_repository(project: Path, repository: str, private: bool = True) -> 
         if init.returncode:
             raise RuntimeError("Nie udało się zainicjalizować Git: " + init.stderr.strip())
     ignore = project / ".gitignore"
-    if not ignore.exists():
-        ignore.write_text("checkpoints/*.pt\n__pycache__/\n*.pyc\n", encoding="utf-8")
+    protected = ["checkpoints/", "model/*.pt", "*.pt", "*.pth", "dataset.*", ".env", "__pycache__/", "*.pyc"]
+    existing = ignore.read_text(encoding="utf-8").splitlines() if ignore.exists() else []
+    merged = existing + [pattern for pattern in protected if pattern not in existing]
+    ignore.write_text("\n".join(merged).rstrip() + "\n", encoding="utf-8")
     added = subprocess.run(["git", "add", "-A"], cwd=project,
                            capture_output=True, text=True, timeout=60)
     if added.returncode:

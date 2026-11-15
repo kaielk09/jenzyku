@@ -201,14 +201,13 @@ class Studio:
                  relief="flat").pack(side="left", fill="x", expand=True, ipady=9)
         self._button(line, "Wybierz", lambda: folder.set(filedialog.askdirectory() or folder.get())).pack(side="left", padx=6)
         def save_and_scan():
-            from .security_scanner import print_report, save_scan_folder, scan_folder
+            from .security_scanner import save_scan_folder, scan_folder
             try:
                 target = save_scan_folder(folder.get())
                 self.status.set("Skanowanie folderu...")
                 self.root.update_idletasks()
                 report = scan_folder(target)
-                print_report(report)
-                messagebox.showinfo("321 Scanner", f"Przeanalizowano {report['files_analysed']} plików. Wynik: {report['severity']}\nSzczegóły raportu w konsoli.")
+                self._show_report("Raport skanowania folderu", report)
                 self.status.set("Skanowanie zakończone")
             except Exception as exc:
                 messagebox.showerror("321 Scanner", str(exc))
@@ -219,11 +218,10 @@ class Studio:
         tk.Entry(web, textvariable=url, bg=PANEL_2, fg=TEXT, insertbackground=TEXT,
                  relief="flat").pack(fill="x", padx=18, pady=(0, 10), ipady=9)
         def scan_url():
-            from .security_scanner import print_report, scan_website
+            from .security_scanner import scan_website
             try:
                 report = scan_website(url.get())
-                print_report(report, website=True)
-                messagebox.showinfo("321 Scanner", f"HTTP {report['status']} • API: {len(report['apis'])}\nRaport szczegółowy wyświetlono w konsoli.")
+                self._show_report("Raport analizy strony WWW", report)
             except Exception as exc:
                 messagebox.showerror("321 Scanner", str(exc))
         self._button(web, "Analizuj stronę", scan_url, True).pack(anchor="e", padx=18, pady=(0, 16))
@@ -305,8 +303,27 @@ class Studio:
         path = filedialog.askdirectory(title="Wybierz folder projektu modelu AI")
         if not path:
             return
-        from .ai_trainer import main
-        main([path])
+        trainer = Path(__file__).resolve().with_name("ai_trainer.py")
+        flags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0) if os.name == "nt" else 0
+        subprocess.Popen([sys.executable, str(trainer), path], cwd=path, creationflags=flags)
+        self.status.set("Trening uruchomiony w osobnym procesie")
+
+    def _show_report(self, title: str, report: dict):
+        import json
+        window = tk.Toplevel(self.root)
+        window.title("321 Security Scanner — " + title)
+        window.geometry("820x620")
+        window.configure(bg=BG)
+        self._label(window, title, 14, TEXT, True).pack(anchor="w", padx=18, pady=(16, 8))
+        output = tk.Text(window, bg=PANEL, fg=TEXT, insertbackground=TEXT,
+                         wrap="word", relief="flat", font=("Consolas", 9),
+                         padx=14, pady=12)
+        scroll = ttk.Scrollbar(window, command=output.yview)
+        output.configure(yscrollcommand=scroll.set)
+        output.pack(side="left", fill="both", expand=True, padx=(18, 0), pady=(0, 18))
+        scroll.pack(side="right", fill="y", padx=(0, 18), pady=(0, 18))
+        output.insert("1.0", json.dumps(report, ensure_ascii=False, indent=2, default=list))
+        output.configure(state="disabled")
 
 
 def main() -> int:

@@ -46,8 +46,9 @@ def download_dataset(repo_id: str, destination: str | Path, split: str="train",
     except ImportError as exc:
         raise RuntimeError("Zainstaluj: pip install '321code-lang[huggingface]'") from exc
     info=HfApi(token=token).dataset_info(repo_id,token=token)
-    card=info.card_data or {}
-    license_id=str(card.get("license","")).lower()
+    card=info.card_data
+    license_value=card.get("license","") if isinstance(card,dict) else getattr(card,"license","")
+    license_id=str(license_value or "").lower()
     if license_id not in ALLOWED_DATASET_LICENSES:
         raise ValueError(f"Licencja datasetu „{license_id or 'niepodana'}” nie jest na liście automatycznie dozwolonych. Sprawdź ją ręcznie.")
     data=load_dataset(repo_id,split=split,streaming=True,token=token)

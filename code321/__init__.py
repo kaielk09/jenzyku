@@ -1,3 +1,3 @@
-"""321code language runtime."""
+"""321code language runtime and desktop tools."""
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"

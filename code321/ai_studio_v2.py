@@ -37,6 +37,8 @@ class CreatorV2:
         self.batch=tk.StringVar(value="8"); self.device=tk.StringVar(value="Auto")
         self.dataset=tk.StringVar(); self.private=tk.BooleanVar(value=True)
         self.hf_dataset=tk.StringVar(); self.hf_model_repo=tk.StringVar()
+        self.image_source=tk.StringVar(); self.image_output=tk.StringVar()
+        self.image_steps=tk.StringVar(value="20000"); self.process_kind="text"; self.api_process=None
         self.github_state=tk.StringVar(value="GitHub niepołączony")
         self.status=tk.StringVar(value="Gotowy do konfiguracji")
         self.progress=tk.DoubleVar(value=0)
@@ -152,6 +154,21 @@ class CreatorV2:
             if caption=="URZĄDZENIE": ttk.Combobox(cell,textvariable=var,values=opts,state="readonly").pack(fill="x",pady=(4,0))
             else: ttk.Combobox(cell,textvariable=var,values=opts).pack(fill="x",pady=(4,0))
             g.columnconfigure(i%4,weight=1)
+        image=self.card(inner,"06  •  Własny model obrazowy DDPM","Osobny model trenowany od zera na Twoim folderze obrazów. W tej wersji generuje bezwarunkowe obrazy 64×64 — bez promptów tekstowych.")
+        image.pack(fill="x",pady=(0,10))
+        ir=tk.Frame(image,bg=PANEL); ir.pack(fill="x",padx=16,pady=(0,12))
+        self.label(ir,"FOLDER Z LEGALNYMI OBRAZAMI",8,MUTED,True).pack(anchor="w")
+        self.entry(ir,self.image_source).pack(side="left",fill="x",expand=True,ipady=7,pady=(4,8))
+        self.button(ir,"WYBIERZ",self.browse_image_source).pack(side="left",padx=8,pady=(4,8))
+        self.label(ir,"FOLDER Z WAGAMI",8,MUTED,True).pack(anchor="w")
+        self.entry(ir,self.image_output).pack(side="left",fill="x",expand=True,ipady=7,pady=(4,0))
+        self.button(ir,"ZAPISZ DO…",self.browse_image_output).pack(side="left",padx=8,pady=(4,0))
+        controls=tk.Frame(image,bg=PANEL); controls.pack(fill="x",padx=16,pady=(0,12))
+        self.label(controls,"KROKI OBRAZÓW",8,MUTED,True).pack(side="left")
+        self.entry(controls,self.image_steps,10).pack(side="left",ipady=6,padx=8)
+        self.button(controls,"TRENUJ MODEL OBRAZOWY",self.start_image_training,True).pack(side="left",padx=6)
+        self.button(controls,"URUCHOM API TEKST + OBRAZY",self.start_api).pack(side="right",padx=6)
+        self.button(controls,"ZATRZYMAJ API",self.stop_api).pack(side="right",padx=6)
         bottom=tk.Frame(self.root,bg=BG); bottom.pack(fill="x",padx=24,pady=(6,12))
         tk.Label(bottom,textvariable=self.status,bg=BG,fg=MUTED,font=("Segoe UI",8)).pack(side="left")
         self.button(bottom,"STWÓRZ PROJEKT I TRENUJ  →",self.create_and_train,True).pack(side="right")
@@ -160,6 +177,55 @@ class CreatorV2:
         self.logs=tk.Text(self.root,height=7,bg="#101018",fg="#c5f5d8",insertbackground=TEXT,
                           relief="flat",font=("Consolas",8),wrap="word")
         self.logs.pack(fill="x",padx=24,pady=(0,14))
+
+    def browse_image_source(self):
+        path=filedialog.askdirectory(title="Wybierz folder z obrazami treningowymi")
+        if path: self.image_source.set(path)
+
+    def browse_image_output(self):
+        path=filedialog.askdirectory(title="Wybierz folder zapisu modelu obrazowego")
+        if path: self.image_output.set(path)
+
+    def start_image_training(self):
+        if self.process and self.process.poll() is None:
+            messagebox.showwarning("321 AI","Inny proces treningowy lub serwer jest już uruchomiony."); return
+        source=self.image_source.get().strip()
+        if not source or not Path(source).is_dir():
+            messagebox.showwarning("321 AI","Wybierz istniejący folder z obrazami."); return
+        try:
+            steps=int(self.image_steps.get())
+            if not 100<=steps<=1000000: raise ValueError("Liczba kroków musi wynosić od 100 do 1 000 000.")
+            output=self.image_output.get().strip() or str(Path.home()/"Desktop"/"321 AI Models"/(safe_name(self.name.get())+"-Images"))
+            Path(output).expanduser().mkdir(parents=True,exist_ok=True)
+            self.image_output.set(output); self.process_kind="image"; self.progress.set(0)
+            self.status.set("Trwa trening własnego modelu obrazowego…")
+            self.append_log("Obrazy źródłowe: "+source)
+            self.process=subprocess.Popen([sys.executable,"-m","code321.ai_image_trainer",source,"--output",output,"--steps",str(steps),"--device",self.device.get().lower()],
+                cwd=Path(__file__).resolve().parent.parent,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
+                text=True,encoding="utf-8",errors="replace",bufsize=1)
+            threading.Thread(target=self._read_output,daemon=True).start()
+            self.root.after(150,self._poll)
+        except (ValueError,OSError) as exc: messagebox.showerror("321 AI",str(exc))
+
+    def start_api(self):
+        if not self.project or not (self.project/"model"/"model.pt").is_file():
+            messagebox.showwarning("321 AI","Najpierw wytrenuj model tekstowy."); return
+        if self.api_process and self.api_process.poll() is None:
+            messagebox.showinfo("321 AI","API już działa na http://127.0.0.1:8000"); return
+        env=os.environ.copy()
+        image_model=Path(self.image_output.get()).expanduser() if self.image_output.get().strip() else None
+        if image_model and (image_model/"image_model.pt").is_file(): env["321_AI_IMAGE_MODEL"]=str(image_model)
+        try:
+            self.api_process=subprocess.Popen([sys.executable,"-m","code321.ai_api",str(self.project),"--host","127.0.0.1","--port","8000"],
+                cwd=Path(__file__).resolve().parent.parent,env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            self.status.set("API uruchamiane na http://127.0.0.1:8000")
+            messagebox.showinfo("321 AI API","API uruchamia się lokalnie. Sprawdź http://127.0.0.1:8000/health")
+        except OSError as exc: messagebox.showerror("321 AI API",str(exc))
+
+    def stop_api(self):
+        if self.api_process and self.api_process.poll() is None:
+            self.api_process.terminate(); self.status.set("Wysłano polecenie zatrzymania API.")
+        else: self.status.set("API nie jest uruchomione.")
 
     def refresh_github(self):
         ok,detail=github_integration.auth_status()
@@ -271,6 +337,7 @@ class CreatorV2:
             self.publish_private=self.private.get()
             self.publish_enabled=self.github_state.get().startswith("Połączono")
             self.hf_publish_repo=self.hf_model_repo.get().strip()
+            self.process_kind="text"
             self.process=subprocess.Popen([sys.executable,"-u",str(trainer),str(project)],
                 cwd=project,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
                 text=True,encoding="utf-8",errors="replace",bufsize=1)
@@ -302,9 +369,14 @@ class CreatorV2:
                     messagebox.showerror("Hugging Face",value)
                 else:
                     if value==0:
-                        self.progress.set(100); self.status.set("Trening zakończony")
-                        self._export_model()
-                        messagebox.showinfo("321 AI","Trening zakończony. Wagi i konfiguracja są w folderze model na pulpicie.")
+                        self.progress.set(100)
+                        if self.process_kind=="image":
+                            self.status.set("Trening modelu obrazowego zakończony")
+                            messagebox.showinfo("321 AI","Model obrazowy zapisano w wybranym folderze.")
+                        else:
+                            self.status.set("Trening zakończony")
+                            self._export_model()
+                            messagebox.showinfo("321 AI","Trening tekstowy zakończony. Wagi są w folderze model na pulpicie.")
                     else: self.status.set(f"Trening zakończył się błędem ({value}). Sprawdź logi.")
         except queue.Empty: pass
         if ((self.process and self.process.poll() is None) or

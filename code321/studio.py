@@ -391,7 +391,7 @@ class Studio:
         webbrowser.open(url)
 
     def open_ai(self):
-        from .ai_app import main
+        from .ai_studio_v2 import main
         main()
 
     def open_model(self):

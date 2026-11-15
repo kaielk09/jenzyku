@@ -96,6 +96,44 @@ def ai_command(args: list[str]) -> int:
     return 2
 
 
+def security_command(args: list[str]) -> int:
+    from .security_scanner import (
+        load_scan_folder, print_report, save_scan_folder, scan_folder, scan_website,
+    )
+    if not args:
+        error("Użycie: 321 cd <folder> | 321 sprawdź | 321 sprawdź internet <URL>")
+        return 2
+    action = args[0].lower()
+    try:
+        if action == "cd":
+            folder = " ".join(args[1:]).strip().strip('"')
+            if not folder:
+                error("Użycie: 321 cd C:\\ścieżka\\do\\folderu")
+                return 2
+            target = save_scan_folder(folder)
+            success(f"Zapamiętano folder skanowania: {target}")
+            info("Ustawienie jest trwałe i przetrwa zamknięcie CMD.")
+            return 0
+        if action in {"sprawdź", "sprawdz"}:
+            if len(args) >= 2 and args[1].lower() in {"internet", "www", "url"}:
+                if len(args) != 3:
+                    error("Użycie: 321 sprawdź internet https://example.com")
+                    return 2
+                print_report(scan_website(args[2]), website=True)
+                return 0
+            if len(args) != 1:
+                error("Użycie: 321 sprawdź")
+                return 2
+            report = scan_folder(load_scan_folder())
+            print_report(report)
+            return 1 if report["timed_out"] else 0
+    except (ValueError, OSError) as exc:
+        error(str(exc))
+        return 1
+    error("Nieznana komenda ochrony. Wpisz: 321 sprawdź")
+    return 2
+
+
 def show_help() -> None:
     print(paint(f"321code {__version__} — własny język i narzędzia", "purple"))
     print(paint("Użycie: 321 <komenda> [argumenty]", "cyan"))
@@ -103,11 +141,15 @@ def show_help() -> None:
     for item in load_catalogue()["commands"]:
         print(f"  {paint(item['name'], 'green'):<24} {item['description']}")
     print("\nPlik języka: 321 run plik.321")
+    print("\n321 Security Scanner:")
+    print("  321 cd <folder>                 Zapamiętaj folder do skanowania")
+    print("  321 sprawdź                     Przeskanuj zapamiętany folder")
+    print("  321 sprawdź internet <URL>      Przeanalizuj publiczną stronę WWW")
 
 
 def main(argv: list[str] | None = None) -> int:
     enable_colors()
-    parser = argparse.ArgumentParser(prog="321", description="Interpreter języka 321code")
+    parser = argparse.ArgumentParser(prog="321", description="Interpreter i narzędzia 321code")
     parser.add_argument("command", nargs="?", default="help")
     parser.add_argument("args", nargs="*")
     ns = parser.parse_args(argv)
@@ -127,6 +169,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_script(cmd)
     if cmd == "ai":
         return ai_command(ns.args)
+    if cmd in {"cd", "sprawdź", "sprawdz"}:
+        return security_command([cmd, *ns.args])
     if cmd in {"install", "init", "clear"}:
         if cmd == "clear":
             os.system("cls" if os.name == "nt" else "clear")

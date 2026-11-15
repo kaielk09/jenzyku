@@ -48,9 +48,11 @@ def create_app(project: str | Path, api_key: str | None = None, device: str = "a
             answer=runtime.generate(last_user,max_tokens,temperature,top_k,history)
         except (ValueError,TypeError) as exc:
             raise HTTPException(status_code=400,detail=str(exc)) from exc
+        prompt_bytes=sum(len(str(m.get("content","")).encode("utf-8")) for m in messages)
+        completion_bytes=len(answer.encode("utf-8"))
         return {"id":"321-chat-completion","object":"chat.completion","model":str(body.get("model","321-ai")),
                 "choices":[{"index":0,"message":{"role":"assistant","content":answer},"finish_reason":"stop"}],
-                "usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}
+                "usage":{"prompt_tokens":prompt_bytes,"completion_tokens":completion_bytes,"total_tokens":prompt_bytes+completion_bytes}}
     @app.post("/v1/images/sample")
     def sample_image(body: dict, authorization: str | None = Header(default=None)):
         authorize(authorization)
@@ -65,7 +67,9 @@ def create_app(project: str | Path, api_key: str | None = None, device: str = "a
             count = int(body.get("n", 1))
             if not 1 <= count <= 4: raise ValueError("n musi należeć do zakresu 1–4.")
             from .ai_image_generate import sample_images
-            images = sample_images(image_checkpoint, count=count, device=runtime.device, seed=body.get("seed"))
+            seed_value=body.get("seed")
+            seed_value=None if seed_value is None else int(seed_value)
+            images = sample_images(image_checkpoint, count=count, device=runtime.device, seed=seed_value)
             encoded=[]
             for image in images:
                 buffer=io.BytesIO(); image.save(buffer,format="PNG")

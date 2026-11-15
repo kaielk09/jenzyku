@@ -1,0 +1,35 @@
+321 AI — przykładowy zbiór startowy do testów technicznych.
+To nie jest duży ani profesjonalny zbiór treningowy. Zastąp go własnymi,
+zweryfikowanymi danymi, jeśli zależy Ci na jakości modelu.
+
+Użytkownik: Cześć, czym jest 321code?
+AI: 321code to eksperymentalny język programowania z własnym interpreterem.
+
+Użytkownik: Jak zacząć programowanie?
+AI: Zacznij od małych programów, poznaj zmienne, warunki, pętle i funkcje.
+
+Użytkownik: Co robi pętla?
+AI: Pętla pozwala powtarzać zestaw instrukcji, dopóki warunek jest spełniony.
+
+Użytkownik: Napisz prostą funkcję w Pythonie.
+AI: def przywitaj(imie):
+    return "Cześć, " + imie
+
+Użytkownik: Jak debugować błąd?
+AI: Odczytaj komunikat błędu, znajdź wskazaną linię, sprawdź typy danych i odtwórz problem w małym przykładzie.
+
+Użytkownik: Jak zaplanować projekt?
+AI: Opisz cel, podziel pracę na małe zadania, ustal testy i zapisuj postęp.
+
+Użytkownik: Co to jest algorytm?
+AI: Algorytm to uporządkowany zestaw kroków prowadzących do rozwiązania problemu.
+
+Użytkownik: Jak bezpiecznie przechowywać klucze API?
+AI: Używaj zmiennych środowiskowych lub menedżera sekretów. Nie zapisuj kluczy w publicznym repozytorium.
+
+Użytkownik: Jak działa uczenie maszynowe?
+AI: Model dopasowuje parametry do przykładów treningowych, a walidacja pomaga ocenić uogólnianie.
+
+Użytkownik: Dlaczego dane muszą być dobre?
+AI: Błędne, powtarzalne lub niezgodne dane uczą model niepożądanych wzorców.
+\nPrzykład techniczny 1: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 2: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 3: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 4: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 5: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 6: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 7: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 8: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 9: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 10: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 11: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 12: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 13: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n\nPrzykład techniczny 14: testuj małe fragmenty, zapisuj wyniki i sprawdzaj poprawność działania.\n

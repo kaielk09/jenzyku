@@ -25,28 +25,19 @@ Następnie otwórz nowe okno CMD i używaj:
 
 ## 321 AI — tworzenie własnego modelu
 
-`321 ai` otwiera okienkowy 321 AI Creator. Wybierasz nazwę modelu, liczbę kroków, opis GPU i plik TXT z danymi. Po kliknięciu CREATE MODEL program tworzy folder `ai/<nazwa-modelu>/` i rozpoczyna trening.
+`321 ai` otwiera 321 AI Creator. Możesz skonfigurować nazwę modelu, kroki treningu, szerokość, warstwy, głowice, kontekst, batch, learning rate, dropout, seed, akumulację gradientu oraz urządzenie obliczeniowe.
 
-W folderze projektu znajdziesz:
-- `config.json` — ustawienia modelu i treningu;
-- `dataset.txt` — kopię wybranych danych treningowych;
-- `model/model.pt` — zapis wytrenowanego modelu;
-- `model/model_info.json` — informacje o modelu.
+Obsługiwane zbiory: TXT, Markdown, JSONL (wiadomości chat lub prompt/completion) i CSV (kolumny prompt/response). Projekt modelu zawiera konfigurację, kopię danych, checkpointy, zapis modelu i metadane.
 
-Model jest małym, eksperymentalnym GPT typu Transformer trenowanym od zera na bajtach tekstu. Nie jest gotowym dużym chatbotem i nie ma wiedzy, której nie zawierają dane treningowe. Jakość zależy przede wszystkim od wielkości, różnorodności i poprawności danych. Dla modelu rozmownego używaj wielu przykładów w formacie:
-
-```text
-Użytkownik: Ile to 2 + 2?
-AI: 2 + 2 = 4.
-Użytkownik: Czym jest fotosynteza?
-AI: To proces, w którym rośliny wykorzystują światło do wytwarzania związków odżywczych.
-```
-
-Dane powinny być legalne do użycia, poprawne i zapisane w UTF-8. Wybierz plik TXT o wielkości co najmniej 512 bajtów. Mały przykładowy zbiór znajduje się w `examples/ai_training.txt`; służy tylko do sprawdzenia działania, nie do stworzenia dobrego, uniwersalnego AI.
+Silnik jest eksperymentalnym byte-level Transformerem trenowanym od zera. Nie ma wiedzy pretrained i nie jest równoważny dużemu modelowi asystenckiemu. Dobre wyniki wymagają dużego, czystego i różnorodnego zbioru, odpowiedniej architektury oraz długiego treningu. Mały plik przykładowy w repo służy wyłącznie do testu technicznego.
 
 ### Wymagania i komendy AI
 
-Trening wymaga PyTorch. W obecnej wersji moduł treningowy wymaga osobnej instalacji biblioteki PyTorch na komputerze użytkownika, więc samodzielny interpreter EXE nie oznacza jeszcze, że cały trening AI działa bez dodatkowych bibliotek.
+Trening wymaga PyTorch, instalowanego osobno. Wybór urządzenia:
+- Auto — CUDA, potem Apple MPS, potem CPU;
+- CPU — działa szeroko, ale zwykle wolniej;
+- CUDA — wymaga kompatybilnej karty NVIDIA i wersji PyTorch z CUDA;
+- MPS — wymaga wspieranego Apple Silicon i PyTorch.
 
 ```bat
 321 ai
@@ -55,8 +46,7 @@ Trening wymaga PyTorch. W obecnej wersji moduł treningowy wymaga osobnej instal
 321 ai chat ai/MojModel
 ```
 
-GPU jest wykrywane automatycznie przez PyTorch. Nazwa GPU wpisana w kreatorze jest tylko informacyjna. Jeśli CUDA nie jest dostępna, trening użyje CPU. Duża liczba kroków może trwać bardzo długo, szczególnie na laptopie.
-
+Trener obsługuje walidację, gradient clipping, checkpointy latest/best i wznawianie zgodnej konfiguracji. Czat ma regulację temperatury i limitu generowania oraz eksport rozmowy.
 
 ## Instalacja z CMD przez Python lub Javę
 
@@ -111,3 +101,39 @@ Interpreter obsługuje zmienne, wyrażenia, warunki, pętle while i for, funkcje
 ## Licencja
 
 MIT. Zobacz `LICENSE`.
+
+
+## 321 Security Scanner
+
+Projekt zawiera również moduł defensywnej analizy statycznej:
+
+```bat
+321 cd "C:\Users\filip\Desktop\MojProgram"
+321 sprawdź
+321 sprawdź internet https://replit.com
+```
+
+Skaner zapamiętuje wybrany folder pomiędzy uruchomieniami CMD, analizuje pliki bez ich uruchamiania, rozpoznaje wybrane identyfikatory API/usług i raportuje podejrzane wskaźniki. Tryb WWW sprawdza podstawowe informacje HTTP(S), nagłówki bezpieczeństwa i treść odpowiedzi. Nie wysyła plików do zewnętrznych serwisów. Szczegóły, limity i ograniczenia: [docs/SECURITY_SCANNER.md](docs/SECURITY_SCANNER.md).
+
+**Ważne:** to narzędzie pomocnicze, a nie pełny antywirus. Wykryte API nie jest samo w sobie zagrożeniem, a brak wskaźników nie gwarantuje bezpieczeństwa.
+
+
+## 321code Studio — desktop workspace
+
+Uruchom graficzne środowisko:
+
+```bat
+321 studio
+```
+
+Dostępne są też aliasy `321 gui` i `321 app`. Studio łączy pulpit, lokalne projekty, kreator 321 AI, czat z modelem, uruchamianie plików .321 i Security Scanner. Interfejs korzysta z ciemnego motywu z fioletowymi akcentami.
+
+Szczegóły: [docs/STUDIO.md](docs/STUDIO.md).
+
+## 321 AI — ulepszony pipeline treningowy
+
+Kreator obsługuje zbiory TXT, Markdown, JSONL i CSV, więcej parametrów treningu, wybór CPU/CUDA/Apple MPS, walidację, wznowienie checkpointów oraz zapis najlepszego modelu według validation loss. Czat ma regulację temperatury i długości odpowiedzi oraz eksport rozmowy.
+
+Dokumentacja: [docs/AI_STUDIO.md](docs/AI_STUDIO.md).
+
+**Ważne:** 321 AI nadal jest eksperymentalnym modelem byte-level trenowanym od zera. To nie jest gotowy model klasy dużych asystentów. Profesjonalny interfejs i lepszy pipeline nie zastępują ogromnego, jakościowego zbioru danych, odpowiedniej architektury i długiego treningu.

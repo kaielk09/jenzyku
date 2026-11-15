@@ -86,6 +86,7 @@ def ai_command(args: list[str]) -> int:
         print("  321 ai train <folder>  Wytrenuj model z dataset.txt")
         print("  321 ai chat <folder>   Otwórz okno czatu wytrenowanego modelu")
         print("  321 ai serve <folder>  Uruchom lokalne API HTTP")
+        print("  321 ai web             Otwórz panel WWW 321 AI Creator")
         print("  321 ai publish-hf <folder> --repo-id USER/MODEL")
         print("  321 ai download-dataset USER/DATASET <plik.jsonl>")
         print("  321 ai train-images <folder-obrazow> --output <folder-modelu>")
@@ -100,6 +101,9 @@ def ai_command(args: list[str]) -> int:
     if action == "serve":
         from .ai_api import main as api_main
         return api_main(rest)
+    if action == "web":
+        from .ai_web_studio import main as web_main
+        return web_main(rest)
     if action == "publish-hf":
         import argparse
         from .ai_hub import publish_model

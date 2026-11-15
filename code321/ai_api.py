@@ -68,6 +68,9 @@ def main(argv=None):
     parser.add_argument("--port",type=int,default=8000)
     parser.add_argument("--device",choices=("auto","cpu","cuda","mps"),default="auto")
     args=parser.parse_args(argv)
+    if args.host not in {"127.0.0.1", "localhost", "::1"} and not os.environ.get("321_AI_API_KEY"):
+        print("Dla nasłuchiwania poza localhost ustaw 321_AI_API_KEY. Nie uruchamiam niezabezpieczonego API.")
+        return 2
     try:
         import uvicorn
         app=create_app(args.project,device=args.device)

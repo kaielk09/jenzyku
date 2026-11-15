@@ -19,4 +19,4 @@ dependencies = []
 packages = ["code321"]
 
 [tool.setuptools.package-data]
-code321 = ["commands.json"]
+code321 = ["commands.json", "data/*.txt"]

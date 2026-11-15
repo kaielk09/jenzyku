@@ -126,3 +126,24 @@ Projekt zawiera również moduł defensywnej analizy statycznej:
 Skaner zapamiętuje wybrany folder pomiędzy uruchomieniami CMD, analizuje pliki bez ich uruchamiania, rozpoznaje wybrane identyfikatory API/usług i raportuje podejrzane wskaźniki. Tryb WWW sprawdza podstawowe informacje HTTP(S), nagłówki bezpieczeństwa i treść odpowiedzi. Nie wysyła plików do zewnętrznych serwisów. Szczegóły, limity i ograniczenia: [docs/SECURITY_SCANNER.md](docs/SECURITY_SCANNER.md).
 
 **Ważne:** to narzędzie pomocnicze, a nie pełny antywirus. Wykryte API nie jest samo w sobie zagrożeniem, a brak wskaźników nie gwarantuje bezpieczeństwa.
+
+
+## 321code Studio — desktop workspace
+
+Uruchom graficzne środowisko:
+
+```bat
+321 studio
+```
+
+Dostępne są też aliasy `321 gui` i `321 app`. Studio łączy pulpit, lokalne projekty, kreator 321 AI, czat z modelem, uruchamianie plików .321 i Security Scanner. Interfejs korzysta z ciemnego motywu z fioletowymi akcentami.
+
+Szczegóły: [docs/STUDIO.md](docs/STUDIO.md).
+
+## 321 AI — ulepszony pipeline treningowy
+
+Kreator obsługuje zbiory TXT, Markdown, JSONL i CSV, więcej parametrów treningu, wybór CPU/CUDA/Apple MPS, walidację, wznowienie checkpointów oraz zapis najlepszego modelu według validation loss. Czat ma regulację temperatury i długości odpowiedzi oraz eksport rozmowy.
+
+Dokumentacja: [docs/AI_STUDIO.md](docs/AI_STUDIO.md).
+
+**Ważne:** 321 AI nadal jest eksperymentalnym modelem byte-level trenowanym od zera. To nie jest gotowy model klasy dużych asystentów. Profesjonalny interfejs i lepszy pipeline nie zastępują ogromnego, jakościowego zbioru danych, odpowiedniej architektury i długiego treningu.

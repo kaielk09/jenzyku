@@ -36,6 +36,7 @@ class CreatorV2:
         self.heads=tk.StringVar(value="8"); self.context=tk.StringVar(value="256")
         self.batch=tk.StringVar(value="8"); self.device=tk.StringVar(value="Auto")
         self.dataset=tk.StringVar(); self.private=tk.BooleanVar(value=True)
+        self.hf_dataset=tk.StringVar(); self.hf_model_repo=tk.StringVar()
         self.github_state=tk.StringVar(value="GitHub niepołączony")
         self.status=tk.StringVar(value="Gotowy do konfiguracji")
         self.progress=tk.DoubleVar(value=0)
@@ -114,7 +115,10 @@ class CreatorV2:
         tk.Checkbutton(vis,text="Prywatne repozytorium (zalecane)",variable=self.private,
                        bg=PANEL,fg=TEXT,selectcolor=ALT,activebackground=PANEL,
                        activeforeground=TEXT).pack(side="left")
-        model=self.card(inner,"03  •  Cele treningu","Wybierz obszary, które chcesz rozwijać. Liczby są zapisywane jako cele/metadane projektu; obecny trener nadal uczy jeden model na wspólnym pliku, więc nie traktuj ich jako gwarantowanej liczby osobno oznaczonych przykładów.")
+        hfrow=tk.Frame(project,bg=PANEL); hfrow.pack(fill="x",padx=16,pady=(0,12))
+        self.label(hfrow,"HUGGING FACE MODEL REPO (opcjonalnie, np. konto/nazwa)",8,MUTED,True).pack(anchor="w")
+        self.entry(hfrow,self.hf_model_repo).pack(fill="x",ipady=7,pady=(4,0))
+        model=self.card(inner,"03  •  Cele treningu","Liczby są stosowane jako docelowe ilości rekordów w zbalansowanym strumieniu treningowym. Dla prawdziwego podziału używaj JSONL/CSV z polem category lub task.")
         model.pack(fill="x",pady=(0,10))
         for task,var in self.tasks.items():
             r=tk.Frame(model,bg=PANEL); r.pack(fill="x",padx=16,pady=4)
@@ -122,12 +126,16 @@ class CreatorV2:
                            selectcolor=ALT,activebackground=PANEL,activeforeground=TEXT).pack(side="left")
             self.label(r,"Liczba przykładów",8,MUTED).pack(side="left",padx=(18,6))
             self.entry(r,self.counts[task],10).pack(side="left",ipady=5)
-        self.label(model,"Obrazy: osobny autorski model i pipeline będą osobnym etapem. Nie włączamy tu niedziałającego przełącznika.",8,"#e7bb75",wraplength=900,justify="left").pack(anchor="w",padx=16,pady=(7,12))
+        self.label(model,"Generowanie obrazów ma osobny trening DDPM — uruchomisz go komendą 321 ai train-images.",8,"#e7bb75",wraplength=900,justify="left").pack(anchor="w",padx=16,pady=(7,12))
         data=self.card(inner,"04  •  Dane treningowe","Wybierz własny TXT / MD / JSONL / CSV. Gdy nic nie wybierzesz, kreator użyje dołączonego zestawu startowego, który służy do testów technicznych, nie do uzyskania jakości komercyjnej.")
         data.pack(fill="x",pady=(0,10))
         dr=tk.Frame(data,bg=PANEL); dr.pack(fill="x",padx=16,pady=(0,12))
         self.entry(dr,self.dataset).pack(side="left",fill="x",expand=True,ipady=8)
         self.button(dr,"WYBIERZ PLIK",self.browse).pack(side="left",padx=8)
+        hfdr=tk.Frame(data,bg=PANEL); hfdr.pack(fill="x",padx=16,pady=(0,12))
+        self.label(hfdr,"PUBLICZNY DATASET HUGGING FACE (wymagana dozwolona licencja)",8,MUTED,True).pack(anchor="w")
+        self.entry(hfdr,self.hf_dataset).pack(side="left",fill="x",expand=True,ipady=7,pady=(4,0))
+        self.button(hfdr,"POBIERZ DATASET",self.download_hf_dataset).pack(side="left",padx=8)
         train=self.card(inner,"05  •  Trening i architektura","Trening uruchamia się z poziomu tego okna. Logi, postęp i status pozostają widoczne w GUI.")
         train.pack(fill="x",pady=(0,10))
         g=tk.Frame(train,bg=PANEL); g.pack(fill="x",padx=16,pady=(0,12))
@@ -174,6 +182,23 @@ class CreatorV2:
             self.status.set("Dokończ logowanie w przeglądarce, potem kliknij ODŚWIEŻ.")
         except (OSError,FileNotFoundError) as exc: messagebox.showerror("GitHub",str(exc))
 
+    def download_hf_dataset(self):
+        repo_id=self.hf_dataset.get().strip()
+        if not repo_id or "/" not in repo_id:
+            messagebox.showwarning("Hugging Face","Podaj identyfikator datasetu w formacie właściciel/nazwa.")
+            return
+        target=Path.home()/"Downloads"/"321 AI Datasets"/(safe_name(repo_id.replace("/","-"))+".jsonl")
+        self.status.set("Pobieranie datasetu i sprawdzanie licencji…")
+        def worker():
+            try:
+                from .ai_hub import download_dataset
+                path,note=download_dataset(repo_id,target,max_examples=100000)
+                self.events.put(("log",note))
+                self.events.put(("dataset",str(path)))
+            except Exception as exc:
+                self.events.put(("dataset_error",str(exc)))
+        threading.Thread(target=worker,daemon=True).start()
+
     def browse(self):
         path=filedialog.askopenfilename(filetypes=[("Dane treningowe","*.txt *.md *.jsonl *.csv"),("Wszystkie","*.*")])
         if path: self.dataset.set(path)
@@ -203,6 +228,8 @@ class CreatorV2:
             steps=int(self.steps.get())
             if not 1<=steps<=1_000_000: raise ValueError("Kroki muszą być od 1 do 1 000 000.")
             source=Path(self.dataset.get()).expanduser() if self.dataset.get().strip() else None
+            if not source and self.hf_dataset.get().strip():
+                raise ValueError("Najpierw kliknij POBIERZ DATASET i poczekaj na zakończenie pobierania.")
             if source and (not source.is_file() or source.suffix.lower() not in {".txt",".md",".jsonl",".csv"}):
                 raise ValueError("Nieprawidłowy plik danych.")
             if source and source.stat().st_size<2048: raise ValueError("Plik danych musi mieć co najmniej 2048 bajtów.")
@@ -241,6 +268,7 @@ class CreatorV2:
             self.publish_repo=full_repo
             self.publish_private=self.private.get()
             self.publish_enabled=self.github_state.get().startswith("Połączono")
+            self.hf_publish_repo=self.hf_model_repo.get().strip()
             self.process=subprocess.Popen([sys.executable,"-u",str(trainer),str(project)],
                 cwd=project,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
                 text=True,encoding="utf-8",errors="replace",bufsize=1)
@@ -262,6 +290,14 @@ class CreatorV2:
             while True:
                 kind,value=self.events.get_nowait()
                 if kind=="log": self.append_log(value)
+                elif kind=="dataset":
+                    self.dataset.set(value)
+                    self.status.set("Dataset pobrany. Możesz rozpocząć trening.")
+                    self.append_log("Dataset HF zapisany: "+value)
+                elif kind=="dataset_error":
+                    self.status.set("Nie udało się pobrać datasetu.")
+                    self.append_log("Błąd pobierania HF: "+value)
+                    messagebox.showerror("Hugging Face",value)
                 else:
                     if value==0:
                         self.progress.set(100); self.status.set("Trening zakończony")
@@ -289,6 +325,10 @@ class CreatorV2:
             if self.process.returncode==0:
                 result=github_integration.publish_repository(self.project,self.publish_repo,self.publish_private)
                 self.events.put(("log","GitHub: "+result))
+                if self.hf_publish_repo:
+                    from .ai_hub import publish_model
+                    hf_url=publish_model(self.project,self.hf_publish_repo,private=True)
+                    self.events.put(("log","Hugging Face: "+hf_url))
         except Exception as exc: self.events.put(("log","GitHub publikacja: "+str(exc)))
 
 

@@ -1,31 +1,63 @@
-# 321 AI Creator v2
+# 321 AI Creator v2 — funkcje i ograniczenia
 
-## Co działa
-- Konto GitHub łączy się przez oficjalne GitHub CLI (gh); aplikacja nie zbiera haseł ani tokenów.
-- Projekt, konfiguracja, checkpointy i końcowe wagi trafiają do Pulpit/321 AI Models/<nazwa>.
-- Kreator pozwala ustawić zadania tekstowe: programowanie, rozmowa i rozumowanie, ich docelowe liczby przykładów oraz parametry architektury i treningu.
-- Trening uruchamia się z GUI, a logi i postęp są pokazywane w oknie.
-- Po treningu, jeśli GitHub jest połączony, aplikacja publikuje projekt przez gh repo create. Repozytorium prywatne jest domyślnym ustawieniem.
-- Wagi końcowe: model/model.pt; metadane: model/model_info.json; wznowienie: checkpoints/latest.pt.
+## Instalacja dodatków
+- API HTTP: `py -m pip install ".[api]"`
+- Hugging Face: `py -m pip install ".[huggingface]"`
+- model obrazowy: `py -m pip install ".[images]"`
+- wszystkie moduły AI: `py -m pip install ".[all-ai]"`
 
-## Dane i rzeczywiste proporcje zadań
-Obsługiwane formaty: TXT, MD, JSONL i CSV. Dla osobnego bilansowania zadań używaj JSONL lub CSV z polem category, task, type albo tag. Rozpoznawane etykiety:
-- programowanie: programming, code, coding, developer
-- rozmowa: conversation, chat, dialogue
-- rozumowanie: reasoning, logic, math, problem_solving
+PyTorch musi mieć build zgodny z posiadanym CPU/GPU. Wybór CUDA nie instaluje sterowników ani CUDA automatycznie.
 
-Przykład JSONL (jeden rekord na linię):
+## Model tekstowy i dane
+Kreator `321 ai` zapisuje projekt do Pulpit/321 AI Models. Task mix stosuje docelowe liczby rekordów w zbalansowanym strumieniu treningowym. Dla prawdziwego balansu używaj JSONL/CSV z polem category/task/type/tag.
+
 ```json
-{"category":"programowanie","prompt":"Napisz funkcję sumującą","completion":"def add(a, b): return a + b"}
-{"category":"rozmowa","prompt":"Cześć","completion":"Witaj!"}
-{"category":"rozumowanie","prompt":"Ile to 17 + 25?","completion":"42"}
+{"category":"programowanie","prompt":"Napisz funkcję sumującą","completion":"def add(a,b): return a+b"}
+{"category":"rozmowa","prompt":"Cześć","completion":"Witaj"}
+{"category":"rozumowanie","prompt":"17+25","completion":"42"}
 ```
 
-Kreatorowe liczby task mix są teraz stosowane jako docelowe liczby przykładów w korpusie treningowym. Jeśli danych w kategorii jest mniej, rekordy są powtarzane z deterministycznym losowaniem. Jeśli kategoria nie ma rekordów, ale istnieje zwykły tekst bez etykiety, może zostać użyty jako wspólny tekst ogólny — log treningu wyświetli ostrzeżenie. Nieoznaczonego tekstu nie należy traktować jako specjalistycznych danych programistycznych/rozumowania. Gdy nie ma ani kategorii, ani tekstu ogólnego, trening zatrzyma się z czytelnym błędem.
+Kategorie: programowanie (programming/code/coding/developer), rozmowa (conversation/chat/dialogue), rozumowanie (reasoning/logic/math/problem_solving). Jeśli kategorii brakuje, ogólny tekst może zostać użyty jako wspólny materiał, a log pokaże ostrzeżenie. Powtarzanie przykładów nie tworzy nowych informacji.
 
-## Ograniczenia, których nie ukrywamy
-- 321-TinyGPT to eksperymentalny, byte-level model tekstowy trenowany od zera; nie jest modelem foundation ani odpowiednikiem dużych asystentów.
-- Obecny pipeline uczy jeden wspólny model tekstowy na zbalansowanym strumieniu. Nie tworzy trzech niezależnych modeli.
-- Generowanie obrazów nie jest dostępne; wymaga osobnej architektury, danych i testów.
-- Wbudowany zestaw startowy jest demonstracyjny, a nie jakościowym korpusem do produkcyjnego modelu.
-- Samo ukończenie treningu nie gwarantuje dobrej jakości. Wynik zależy od praw, jakości, różnorodności i rozmiaru danych oraz sprzętu.
+## Pobieranie datasetu z Hugging Face
+```bat
+321 ai download-dataset OWNER/DATASET dataset.jsonl --max-examples 100000
+```
+Automatyczny filtr dopuszcza licencje MIT, Apache-2.0, BSD-2/3-Clause, CC0-1.0, CC-BY-4.0, CC-BY-SA-4.0 i ISC. Brak licencji lub inna licencja oznacza odmowę. To filtr techniczny, nie porada prawna — przed treningiem sprawdź prawa do treści i wymagania atrybucji. Dane są pobierane strumieniowo do JSONL.
+
+## Lokalne API HTTP
+```bat
+py -m pip install ".[api]"
+321 ai serve "C:\sciezka\do\modelu"
+```
+Domyślnie API słucha tylko na `127.0.0.1:8000`. Endpointy: `GET /health`, `GET /v1/models`, `POST /v1/chat/completions`.
+
+Aby udostępnić API w sieci, ustaw klucz i binduj host:
+```bat
+set 321_AI_API_KEY=ustaw_dlugi_losowy_klucz
+321 ai serve "C:\sciezka\do\modelu" --host 0.0.0.0 --port 8000
+```
+Klient wysyła `Authorization: Bearer TWÓJ_KLUCZ`. Serwer odmawia startu poza localhost bez klucza. Nie wystawiaj portu publicznie bez TLS, zapory, limitów żądań i reverse proxy. API nie obsługuje jeszcze streamingu ani generowania obrazów.
+
+## Publikowanie modelu na Hugging Face
+Ustaw `HF_TOKEN` jako zmienną środowiskową (nie zapisuj go w repo ani config.json):
+```bat
+set HF_TOKEN=hf_...
+321 ai publish-hf "C:\sciezka\do\modelu" --repo-id TWOJE_KONTO/NAZWA_MODELU
+```
+Domyślnie repozytorium jest prywatne; `--public` zmienia widoczność. Publikowane są wagi, konfiguracja i README. Przed publikacją dodaj wymagane atrybucje datasetów i sprawdź warunki licencji.
+
+## Oryginalny model obrazowy 321 AI
+To odrębna, eksperymentalna architektura DDPM/U-Net napisana w projekcie i trenowana od zera — bez gotowego zewnętrznego generatora. Obecna wersja jest bezwarunkowa, generuje 64×64 i nie przyjmuje promptu tekstowego. Używaj wyłącznie lokalnych obrazów, do których masz prawa:
+```bat
+321 ai train-images "C:\legalne_obrazy" --output "C:\modele\321-image" --steps 20000 --batch 16
+321 ai generate-image "C:\modele\321-image" --count 1 --output "C:\wygenerowane"
+```
+Checkpoint: `image_model.pt`. Jakość może być niska przy małym zbiorze lub krótkim treningu; pipeline nie jest jeszcze częścią tekstowego API.
+
+## Ograniczenia
+- Model tekstowy to eksperymentalny byte-level Transformer trenowany od zera, nie model foundation/pretrained.
+- Model obrazowy to unconditional DDPM 64×64, nie generator prompt-to-image.
+- Brak gwarancji jakości. Wynik zależy od legalności, jakości, różnorodności i skali danych, treningu oraz sprzętu.
+- Checkpointy mogą zajmować dużo miejsca — rób kopie zapasowe.
+- CI sprawdza składnię i testy bez GPU; nie potwierdza długiego treningu ani wdrożenia produkcyjnego.

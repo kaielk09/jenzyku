@@ -141,11 +141,16 @@ def main(argv=None):
         except (AttributeError, RuntimeError):
             pass
     ids = torch.tensor(list(data), dtype=torch.long)
-    split = min(len(ids) - context - 1, max(context + 2, int(len(ids) * 0.95)))
-    train_ids = ids[:split]
-    val_ids = ids[split:]
-    if len(val_ids) < context + 2:
-        val_ids = train_ids[-min(len(train_ids), context * 4):]
+    minimum_split = context + 2
+    if len(ids) >= minimum_split * 2:
+        split = min(len(ids) - minimum_split, max(minimum_split, int(len(ids) * 0.95)))
+        train_ids = ids[:split]
+        val_ids = ids[split:]
+    else:
+        # Tiny datasets cannot provide two independent context-sized partitions.
+        # Reuse the complete stream for diagnostics rather than failing at batch sampling.
+        train_ids = ids
+        val_ids = ids
     model_cfg = {
         "vocab_size": 256, "width": width, "layers": layers, "heads": heads,
         "context": context, "dropout": dropout,

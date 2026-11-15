@@ -137,3 +137,14 @@ Kreator obsługuje zbiory TXT, Markdown, JSONL i CSV, więcej parametrów trenin
 Dokumentacja: [docs/AI_STUDIO.md](docs/AI_STUDIO.md).
 
 **Ważne:** 321 AI nadal jest eksperymentalnym modelem byte-level trenowanym od zera. To nie jest gotowy model klasy dużych asystentów. Profesjonalny interfejs i lepszy pipeline nie zastępują ogromnego, jakościowego zbioru danych, odpowiedniej architektury i długiego treningu.
+
+
+## 321 AI Creator v2
+
+Nowy kreator uruchamiany przez `321 ai` lub z 321code Studio. Łączy się z GitHub przez oficjalne GitHub CLI (`gh`), tworzy lokalny projekt na pulpicie w `321 AI Models`, pokazuje logi treningu w GUI i po zakończeniu może utworzyć repozytorium GitHub. Domyślnie repozytorium jest prywatne.
+
+Wymagane do publikacji: Git, GitHub CLI oraz zalogowane konto (`gh auth login --web`). 321code nie przechowuje haseł ani tokenów GitHub.
+
+Dokumentacja: [docs/AI_CREATOR_V2.md](docs/AI_CREATOR_V2.md).
+
+**Aktualne ograniczenia:** to nadal eksperymentalny model tekstowy byte-level. Liczby przy zadaniach zapisują cele w konfiguracji, ale aktualny trener nie rozdziela jeszcze danych i strat według tych kategorii. Wbudowany zbiór startowy jest demonstracyjny. Autorskie generowanie obrazów nie jest jeszcze zaimplementowane.

@@ -84,8 +84,13 @@ button:disabled{opacity:.45;cursor:wait}.secondary{background:#28243a;border:1px
 </div><div class="foot">321code · Experimental model training studio</div>
 </main>
 <script>
-const panelKey = "__PANEL_KEY__";
 const byId = id => document.getElementById(id);
+async function login(){
+ const data=new FormData();data.append("key",byId("loginKey").value);
+ const response=await fetch("/auth",{method:"POST",body:data});
+ if(!response.ok){alert("Nieprawidłowy klucz dostępu.");return;}
+ byId("loginBox").style.display="none";await refreshStatus();
+}
 async function startTraining(){
  const button=byId("start");button.disabled=true;
  const data=new FormData();
@@ -122,17 +127,28 @@ def index():
     return HTMLResponse(HTML)
 
 
+@app.post("/auth")
+def authenticate(request: Request, response: Response, key: str = Form(...)):
+    if not hmac.compare_digest(key, PANEL_KEY):
+        raise HTTPException(status_code=401, detail="Nieprawidłowy klucz panelu.")
+    response.set_cookie(
+        "321_ai_session", key, httponly=True,
+        secure=(request.url.scheme == "https"), samesite="strict", max_age=3600,
+    )
+    return {"ok": True}
+
+
 @app.post("/start")
 async def start_training(
+    request: Request,
     name: str = Form(...), steps: int = Form(...), device: str = Form("auto"),
     width: int = Form(...), layers: int = Form(...), heads: int = Form(...),
     context: int = Form(...), batch: int = Form(...),
     nprog: int = Form(2000), nchat: int = Form(2000), nreason: int = Form(1000),
     programming: bool = Form(False), conversation: bool = Form(False),
     reasoning: bool = Form(False), dataset: UploadFile | None = File(None),
-    x_panel_key: str | None = Header(None),
 ):
-    require_key(x_panel_key)
+    require_key(request.cookies.get("321_ai_session"))
     with LOCK:
         current = STATE["process"]
         if current is not None and current.poll() is None:
@@ -227,8 +243,8 @@ async def start_training(
 
 
 @app.get("/status")
-def get_status(x_panel_key: str | None = Header(None)):
-    require_key(x_panel_key)
+def get_status(request: Request):
+    require_key(request.cookies.get("321_ai_session"))
     with LOCK:
         return {
             "status": STATE["status"], "logs": list(STATE["logs"][-300:]),

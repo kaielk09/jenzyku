@@ -141,6 +141,7 @@ def show_help() -> None:
     for item in load_catalogue()["commands"]:
         print(f"  {paint(item['name'], 'green'):<24} {item['description']}")
     print("\nPlik języka: 321 run plik.321")
+    print("Studio GUI: 321 studio")
     print("\n321 Security Scanner:")
     print("  321 cd <folder>                 Zapamiętaj folder do skanowania")
     print("  321 sprawdź                     Przeskanuj zapamiętany folder")

@@ -284,7 +284,9 @@ class Creator:
                 raise ValueError("Wybierz istniejący plik .txt z danymi treningowymi.")
             if source.stat().st_size < 512:
                 raise ValueError("Plik jest za mały. Dodaj co najmniej 512 bajtów tekstu.")
-            if int(self.width.get()) % int(self.heads.get()) != 0:\n                raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")\n            project = APP_DIR / "ai" / name
+            if int(self.width.get()) % int(self.heads.get()) != 0:
+                raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")
+            project = APP_DIR / "ai" / name
             project.mkdir(parents=True, exist_ok=False)
             cfg = {
                 "name": name,

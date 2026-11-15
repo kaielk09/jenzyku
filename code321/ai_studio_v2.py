@@ -49,7 +49,7 @@ class CreatorV2:
             "rozmowa":tk.StringVar(value="2000"),
             "rozumowanie":tk.StringVar(value="1000"),
         }
-        self.events=queue.Queue(); self.process=None; self.project=None
+        self.events=queue.Queue(); self.process=None; self.project=None; self.publisher_thread=None
         self._style(); self._build(); self.refresh_github()
 
     def _style(self):
@@ -161,7 +161,7 @@ class CreatorV2:
         try:
             command=github_integration.login_command()
             if os.name=="nt":
-                subprocess.Popen(["cmd","/k",*command],creationflags=getattr(subprocess,"CREATE_NEW_CONSOLE",0))
+                subprocess.Popen(["cmd","/c",*command],creationflags=getattr(subprocess,"CREATE_NEW_CONSOLE",0))
             elif sys.platform=="darwin":
                 subprocess.Popen(command)
             else:
@@ -247,7 +247,7 @@ class CreatorV2:
             threading.Thread(target=self._read_output,daemon=True).start()
             self.root.after(150,self._poll)
             if self.publish_enabled:
-                threading.Thread(target=self._publish_after_training,daemon=True).start()
+                self.publisher_thread=threading.Thread(target=self._publish_after_training,daemon=True)\n                self.publisher_thread.start()
         except FileExistsError: messagebox.showerror("321 AI","Folder tego modelu już istnieje.")
         except (ValueError,OSError) as exc: messagebox.showerror("321 AI",str(exc))
 
@@ -268,7 +268,7 @@ class CreatorV2:
                         messagebox.showinfo("321 AI","Trening zakończony. Wagi i konfiguracja są w folderze model na pulpicie.")
                     else: self.status.set(f"Trening zakończył się błędem ({value}). Sprawdź logi.")
         except queue.Empty: pass
-        if self.process and self.process.poll() is None: self.root.after(150,self._poll)
+        if (self.process and self.process.poll() is None) or (self.publisher_thread and self.publisher_thread.is_alive()): self.root.after(150,self._poll)
 
     def _export_model(self):
         if not self.project: return

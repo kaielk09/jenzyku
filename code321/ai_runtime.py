@@ -74,7 +74,7 @@ class ModelRuntime:
                 next_token = indices.gather(-1, torch.multinomial(probs, 1))
                 tokens = torch.cat((tokens, next_token), dim=1)
                 raw = bytes(tokens[0].tolist())
-                if raw.endswith(b"\nUżytkownik:") or raw.endswith(b"\nU"):
+                if raw.endswith("\nUżytkownik:".encode("utf-8")) or raw.endswith(b"\nU"):
                     break
         decoded = bytes(tokens[0].tolist()).decode("utf-8", errors="replace")
         answer = decoded.split("\nAI:", 1)[-1].split("\nUżytkownik:", 1)[0].strip()

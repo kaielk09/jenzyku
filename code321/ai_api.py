@@ -11,22 +11,12 @@ from typing import Any
 def create_app(project: str | Path, api_key: str | None = None, device: str = "auto"):
     try:
         from fastapi import FastAPI, Header, HTTPException
-        from pydantic import BaseModel, Field
     except ImportError as exc:
         raise RuntimeError("Zainstaluj dodatki API: pip install '321code-lang[api]'") from exc
     from .ai_runtime import ModelRuntime
     runtime = ModelRuntime(project, device=device)
     secret = api_key if api_key is not None else os.environ.get("321_AI_API_KEY", "")
     app = FastAPI(title="321 AI API", version="1.0.0", description="Lokalne API dla wytrenowanego modelu 321 AI.")
-    class Message(BaseModel):
-        role: str
-        content: str
-    class ChatRequest(BaseModel):
-        model: str = "321-ai"
-        messages: list[Message]
-        max_tokens: int = Field(default=160, ge=1, le=1024)
-        temperature: float = Field(default=0.8, ge=0.05, le=2.0)
-        top_k: int = Field(default=40, ge=1, le=256)
     def authorize(authorization: str | None):
         if not secret:
             return
@@ -42,20 +32,23 @@ def create_app(project: str | Path, api_key: str | None = None, device: str = "a
         authorize(authorization)
         return {"object":"list","data":[{"id":runtime.info.get("name",Path(project).name),"object":"model","owned_by":"321code"}]}
     @app.post("/v1/chat/completions")
-    def chat(body: ChatRequest, authorization: str | None = Header(default=None)):
+    def chat(body: dict, authorization: str | None = Header(default=None)):
         authorize(authorization)
-        if not body.messages:
-            raise HTTPException(status_code=400, detail="messages nie może być puste.")
-        messages=[m.model_dump() for m in body.messages]
+        messages=body.get("messages") if isinstance(body,dict) else None
+        if not isinstance(messages,list) or not messages:
+            raise HTTPException(status_code=400, detail="messages musi być niepustą listą.")
+        if any(not isinstance(m,dict) or m.get("role") not in {"system","user","assistant"} or not isinstance(m.get("content"),str) for m in messages):
+            raise HTTPException(status_code=400, detail="Każda wiadomość musi zawierać role i tekst content.")
         last_user=next((m["content"] for m in reversed(messages) if m["role"]=="user"),None)
         if not last_user:
             raise HTTPException(status_code=400, detail="Wymagana jest wiadomość role=user.")
-        history=[{"role":m["role"],"content":m["content"]} for m in messages[:-1]]
         try:
-            answer=runtime.generate(last_user,body.max_tokens,body.temperature,body.top_k,history)
-        except ValueError as exc:
+            max_tokens=int(body.get("max_tokens",160)); temperature=float(body.get("temperature",0.8)); top_k=int(body.get("top_k",40))
+            history=[{"role":m["role"],"content":m["content"]} for m in messages[:-1]]
+            answer=runtime.generate(last_user,max_tokens,temperature,top_k,history)
+        except (ValueError,TypeError) as exc:
             raise HTTPException(status_code=400,detail=str(exc)) from exc
-        return {"id":"321-chat-completion","object":"chat.completion","model":body.model,
+        return {"id":"321-chat-completion","object":"chat.completion","model":str(body.get("model","321-ai")),
                 "choices":[{"index":0,"message":{"role":"assistant","content":answer},"finish_reason":"stop"}],
                 "usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}
     return app

@@ -51,6 +51,31 @@ def create_app(project: str | Path, api_key: str | None = None, device: str = "a
         return {"id":"321-chat-completion","object":"chat.completion","model":str(body.get("model","321-ai")),
                 "choices":[{"index":0,"message":{"role":"assistant","content":answer},"finish_reason":"stop"}],
                 "usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}
+    @app.post("/v1/images/sample")
+    def sample_image(body: dict, authorization: str | None = Header(default=None)):
+        authorize(authorization)
+        import base64
+        import io
+        image_checkpoint = Path(os.environ.get("321_AI_IMAGE_MODEL", str(Path(project) / "image_model")))
+        if image_checkpoint.is_dir():
+            image_checkpoint = image_checkpoint / "image_model.pt"
+        if not image_checkpoint.is_file():
+            raise HTTPException(status_code=503, detail="Brak wytrenowanego modelu obrazowego. Ustaw 321_AI_IMAGE_MODEL na folder lub plik image_model.pt.")
+        try:
+            count = int(body.get("n", 1))
+            if not 1 <= count <= 4: raise ValueError("n musi należeć do zakresu 1–4.")
+            from .ai_image_generate import sample_images
+            images = sample_images(image_checkpoint, count=count, device=runtime.device, seed=body.get("seed"))
+            encoded=[]
+            for image in images:
+                buffer=io.BytesIO(); image.save(buffer,format="PNG")
+                encoded.append(base64.b64encode(buffer.getvalue()).decode("ascii"))
+            return {"object":"list","data":[{"b64_json":item,"size":"64x64"} for item in encoded],
+                    "model":"321-ImageDDPM-unconditional","prompt_conditioning":False}
+        except (ValueError,TypeError,FileNotFoundError) as exc:
+            raise HTTPException(status_code=400,detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=500,detail=f"Błąd modelu obrazowego: {exc}") from exc
     return app
 
 def main(argv=None):

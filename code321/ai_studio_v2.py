@@ -401,13 +401,19 @@ class CreatorV2:
             self.process.wait()
             if self.process.returncode==0:
                 if self.publish_enabled:
-                    result=github_integration.publish_repository(self.project,self.publish_repo,self.publish_private)
-                    self.events.put(("log","GitHub: "+result))
+                    try:
+                        result=github_integration.publish_repository(self.project,self.publish_repo,self.publish_private)
+                        self.events.put(("log","GitHub: "+result))
+                    except Exception as exc:
+                        self.events.put(("log","GitHub publikacja nie powiodła się: "+str(exc)))
                 if self.hf_publish_repo:
-                    from .ai_hub import publish_model
-                    hf_url=publish_model(self.project,self.hf_publish_repo,private=True)
-                    self.events.put(("log","Hugging Face: "+hf_url))
-        except Exception as exc: self.events.put(("log","GitHub publikacja: "+str(exc)))
+                    try:
+                        from .ai_hub import publish_model
+                        hf_url=publish_model(self.project,self.hf_publish_repo,private=True)
+                        self.events.put(("log","Hugging Face: "+hf_url))
+                    except Exception as exc:
+                        self.events.put(("log","Hugging Face publikacja nie powiodła się: "+str(exc)))
+        except Exception as exc: self.events.put(("log","Publikacja: "+str(exc)))
 
 
 def main() -> int:

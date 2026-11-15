@@ -21,7 +21,7 @@ class TaskDatasetTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); (root/"dataset.txt").write_text("A"*3000,encoding="utf-8")
             text, report=load_task_training_text(root,{"dataset_file":"dataset.txt","task_mix":{"programowanie":2,"rozmowa":3}})
-            self.assertEqual(text.count("A"),5000)
+            self.assertEqual(text.count("A"),15000)
             self.assertTrue(any("wspólnego tekstu ogólnego" in x for x in report))
 
 if __name__ == "__main__": unittest.main()

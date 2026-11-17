@@ -86,6 +86,31 @@ java Install321.java
 
 Program Java pobierze oficjalny `321code-Setup.exe` z repozytorium GitHub i automatycznie go uruchomi. W oknie instalatora kliknij **Zainstaluj**. Java nie zastępuje Pythona do uruchamiania wersji źródłowej — ten sposób uruchamia gotowy instalator Windows.
 
+## Więcej składni języka
+
+```321
+let wynik = 2
+wynik += 3
+print wynik ** 2
+
+if wynik < 4:
+    print "mniej"
+elif wynik in [5, 6]:
+    print "pasuje"
+else:
+    print "inne"
+
+for liczba in range(10):
+    if liczba == 2:
+        continue
+    if liczba == 6:
+        break
+    print liczba
+
+print sum([1, 2, 3])
+print sorted([3, 1, 2])
+```
+
 ## Przykład języka 321code
 
 ```321
@@ -106,7 +131,7 @@ Uruchom: `321 run examples/hello.321`.
 
 ## Status projektu
 
-Interpreter obsługuje zmienne, wyrażenia, warunki, pętle while i for, funkcje, lokalne importy, listy, krotki, słowniki oraz odczyt elementów przez indeks lub klucz. Funkcje wbudowane: str(), int(), float(), bool(), len(), abs(), min(), max(), round(), range(), upper(), lower() i input(). Konsola CMD ma kolorowe komunikaty pomocy, sukcesu, informacji i błędów. Katalog komend jest nadal niewielki. Menedżer pakietów obsługuje lokalne archiwa ZIP, rejestr HTTPS, kontrolę SHA-256, zależności, listę pakietów, usuwanie, aktualizacje, pakowanie i plik blokady `321code.lock`. Rejestr startuje pusty — instalacja pakietów po nazwie zacznie działać, gdy zostaną opublikowane wpisy z prawidłowym archiwum i sumą SHA-256.
+Interpreter obsługuje zmienne, wyrażenia, warunki if/elif/else, pętle while i for, break, continue, funkcje, lokalne importy, listy, krotki, słowniki oraz odczyt elementów przez indeks lub klucz. Operatory obejmują potęgowanie (**), sprawdzanie przynależności (in/not in) i skrócone AND/OR. Zmienne można aktualizować operatorami +=, -=, *=, /= i %=. Funkcje wbudowane: str(), int(), float(), bool(), len(), abs(), min(), max(), round(), sum(), sorted(), reversed(), any(), all(), type(), range(), upper(), lower() i input(). Konsola CMD ma kolorowe komunikaty pomocy, sukcesu, informacji i błędów. Katalog komend jest nadal niewielki. Menedżer pakietów obsługuje lokalne archiwa ZIP, rejestr HTTPS, kontrolę SHA-256, zależności, listę pakietów, usuwanie, aktualizacje, pakowanie i plik blokady `321code.lock`. Rejestr startuje pusty — instalacja pakietów po nazwie zacznie działać, gdy zostaną opublikowane wpisy z prawidłowym archiwum i sumą SHA-256.
 
 ## Menedżer pakietów 321 Packages
 

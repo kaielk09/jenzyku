@@ -318,7 +318,7 @@ def run_file(path: Path) -> int:
         return 1
     try:
         Interpreter(path.parent).run(path)
-    except (OSError, UnicodeError, ValueError, TypeError, ZeroDivisionError, ReturnSignal) as exc:
+    except (OSError, UnicodeError, ValueError, TypeError, ZeroDivisionError, ReturnSignal, BreakSignal, ContinueSignal) as exc:
         print(f"{path}: {exc}", file=sys.stderr)
         return 1
     return 0

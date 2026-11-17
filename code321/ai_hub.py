@@ -40,7 +40,7 @@ def export_zip(project, destination):
             z.write(project / "config.json", "model-code/config.json")
         z.writestr("model-code/README.md",
             "321 AI byte-level TinyGPT. Wlasna architektura PyTorch trenowana od zera. "
-            "Nie jest bezposrednio zgodna z Transformers AutoModel.\\n")
+            "Nie jest bezposrednio zgodna z Transformers AutoModel.\n")
         for rel in ("model/model.pt", "model/model_info.json",
                     "checkpoints/latest.pt", "checkpoints/best.pt",
                     "training_metrics.jsonl", "status.json"):
@@ -145,6 +145,8 @@ class Studio:
             self.title.configure(text="Brak modeli")
             self.meta.configure(text="Kliknij NOWY MODEL, aby rozpocząć.")
             self.actions(False)
+        if self.tree.selection():
+            self.select()
         self.root.after(4000, self.refresh)
 
     def select(self, _event=None):
@@ -158,13 +160,13 @@ class Studio:
         status = read_json(p / "status.json")
         n = step_count(p, info, status)
         size = (p / "dataset.txt").stat().st_size if (p / "dataset.txt").exists() else 0
-        meta = (f"Status: {'wytrenowany' if trained(p) else 'w trakcie / nieukończony'}\\n"
-                f"Kroki: {n:,}\\nArchitektura: {info.get('architecture', '321 TinyGPT')}\\n"
-                f"Warstwy: {cfg.get('layers', '?')} • Głowice: {cfg.get('heads', '?')}\\n"
-                f"Szerokość: {cfg.get('width', '?')} • Kontekst: {cfg.get('context', '?')}\\n"
+        meta = (f"Status: {'wytrenowany' if trained(p) else 'w trakcie / nieukończony'}\n"
+                f"Kroki: {n:,}\nArchitektura: {info.get('architecture', '321 TinyGPT')}\n"
+                f"Warstwy: {cfg.get('layers', '?')} • Głowice: {cfg.get('heads', '?')}\n"
+                f"Szerokość: {cfg.get('width', '?')} • Kontekst: {cfg.get('context', '?')}\n"
                 f"Dane: {size:,} bajtów")
         if info.get("best_validation_loss") is not None:
-            meta += f"\\nStrata walidacyjna: {info['best_validation_loss']:.4f}"
+            meta += f"\nStrata walidacyjna: {info['best_validation_loss']:.4f}"
         self.title.configure(text=cfg.get("name", p.name))
         self.meta.configure(text=meta)
         self.actions(True)
@@ -196,7 +198,7 @@ class Studio:
             return
         try:
             export_zip(self.selected, Path(dest))
-            messagebox.showinfo("321 AI", "Zapisano ZIP:\\n" + dest)
+            messagebox.showinfo("321 AI", "Zapisano ZIP:\n" + dest)
         except OSError as exc:
             messagebox.showerror("321 AI", str(exc))
 

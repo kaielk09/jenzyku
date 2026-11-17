@@ -4,7 +4,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from code321.packages import PackageError, install, list_packages, remove
+from code321.packages import PackageError, init_package, install, list_packages, remove, update
 
 
 class PackageManagerTests(unittest.TestCase):
@@ -28,6 +28,14 @@ class PackageManagerTests(unittest.TestCase):
             }])
             self.assertIn("hello321", remove("hello321", root))
             self.assertEqual(list_packages(root), [])
+
+    def test_init_package_creates_valid_skeleton(self):
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp) / "new-package"
+            init_package(str(folder), "sample321")
+            manifest = json.loads((folder / "package.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["name"], "sample321")
+            self.assertTrue((folder / "main.321").is_file())
 
     def test_reject_archive_without_package_manifest(self):
         with tempfile.TemporaryDirectory() as temp:

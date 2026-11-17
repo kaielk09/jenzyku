@@ -215,9 +215,20 @@ class Interpreter:
         return None
 
     def import_file(self, filename: str):
-        candidate = (self.base_dir / filename).resolve()
-        if candidate.suffix != ".321" or self.base_dir not in candidate.parents:
-            raise ValueError("Import jest dozwolony tylko dla plików .321 wewnątrz folderu projektu")
+        relative = Path(filename)
+        if relative.is_absolute() or ".." in relative.parts or relative.suffix != ".321":
+            raise ValueError("Import wymaga względnej ścieżki do pliku .321 bez '..'")
+        candidate = (self.base_dir / relative).resolve()
+        project_packages = (self.base_dir / ".321code" / "packages").resolve()
+        if self.base_dir not in candidate.parents:
+            # Package imports use: import "nazwa_pakietu/modul.321"
+            package_candidate = (project_packages / relative).resolve()
+            if project_packages not in package_candidate.parents:
+                raise ValueError("Import pakietu wychodzi poza folder pakietów")
+            candidate = package_candidate
+        allowed_root = self.base_dir if self.base_dir in candidate.parents else project_packages
+        if allowed_root not in candidate.parents:
+            raise ValueError("Import jest dozwolony tylko z projektu lub zainstalowanego pakietu")
         if candidate in self.import_stack:
             raise ValueError(f"Wykryto zapętlony import: {filename}")
         if not candidate.is_file():

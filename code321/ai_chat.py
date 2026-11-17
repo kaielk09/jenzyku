@@ -13,8 +13,15 @@ class Chat:
         self.root, self.project = root, project
         self.history: list[tuple[str, str]] = []
         root.title(f"321 AI — {project.name}")
-        root.geometry("780x640")
+        root.geometry("1100x760")
+        root.minsize(680, 500)
         root.configure(bg="#101018")
+        if sys.platform == "win32":
+            try:
+                root.state("zoomed")
+            except tk.TclError:
+                pass
+        root.bind("<F11>", self.toggle_maximize)
         self.output = tk.Text(root, bg="#191827", fg="#eeeafc", insertbackground="white",
                               wrap="word", relief="flat", font=("Arial", 11), padx=12, pady=12)
         self.output.pack(fill="both", expand=True, padx=14, pady=(14, 8))
@@ -31,6 +38,12 @@ class Chat:
         self.send_button.pack(side="left", padx=(8, 0))
         self.model = None
         self.load_model()
+
+    def toggle_maximize(self, _event=None):
+        try:
+            self.root.state("normal" if self.root.state() == "zoomed" else "zoomed")
+        except tk.TclError:
+            pass
 
     def append(self, text: str):
         self.output.configure(state="normal")

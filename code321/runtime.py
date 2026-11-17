@@ -225,8 +225,8 @@ class Interpreter:
                 if not match:
                     raise ValueError("Użycie: let nazwa = wyrażenie")
                 self.variables[match.group(1)] = _expression(match.group(2), self.variables)
-            elif re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\\s*(?:\\+=|-=|\\*=|/=|%=)\\s*.+", line):
-                match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\\s*(\\+=|-=|\\*=|/=|%=)\\s*(.+)", line)
+            elif re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\s*(?:\+=|-=|\*=|/=|%=)\s*.+", line):
+                match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\s*(\+=|-=|\*=|/=|%=)\s*(.+)", line)
                 name, op, expression = match.groups()
                 if name not in self.variables:
                     raise ValueError(f"Nieznana zmienna: {name}")

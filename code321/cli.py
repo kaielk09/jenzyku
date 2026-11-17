@@ -17,6 +17,17 @@ COLORS = {
     "red": "\033[91m", "purple": "\033[95m", "blue": "\033[94m",
 }
 
+# Aliases are handled here, not only displayed in the command catalogue.
+ALIASES = {
+    "pomoc": "help",
+    "wersja": "version",
+    "uruchom": "run",
+    "create": "init",
+    "add": "install",
+    "cls": "clear",
+    "pkg": "packages",
+}
+
 
 def enable_colors() -> None:
     """Enable ANSI virtual-terminal sequences in Windows CMD."""
@@ -80,10 +91,11 @@ def ai_command(args: list[str]) -> int:
         from .ai_app import main as creator_main
         return creator_main()
     action, *rest = args
-    if action in {"help", "pomoc"}:
+    if action in {"help", "pomoc", "--help", "-h"}:
         print(paint("321 AI — tworzenie i obsługa własnych modeli", "purple"))
         print("  321 ai       Otwórz kreator nowego modelu")
         print("  321 ai chat  Otwórz bibliotekę modeli, eksport i czat")
+        print("  321 ai help  Pokaż tę pomoc")
         return 0
     if action == "chat" and not rest:
         from .ai_hub import main as studio_main
@@ -95,52 +107,89 @@ def ai_command(args: list[str]) -> int:
 def show_help() -> None:
     print(paint(f"321code {__version__} — własny język i narzędzia", "purple"))
     print(paint("Użycie: 321 <komenda> [argumenty]", "cyan"))
-    print("\nKomendy:")
+    print("\nKomendy główne:")
     for item in load_catalogue()["commands"]:
-        print(f"  {paint(item['name'], 'green'):<24} {item['description']}")
+        aliases = item.get("aliases", [])
+        alias_text = f" (alias: {', '.join(aliases)})" if aliases else ""
+        print(f"  {item['name']:<18} {item['description']}{alias_text}")
+    print("\nZarządzanie pakietami:")
+    print("  321 packages help")
+    print("  321 packages init <folder> <nazwa>")
+    print("  321 packages install <nazwa|plik.zip>")
+    print("  321 packages list")
+    print("  321 packages remove <nazwa>")
+    print("  321 packages update [nazwa]")
+    print("  321 packages pack <folder> [plik.zip]")
+    print("\n321 AI:")
+    print("  321 ai")
+    print("  321 ai chat")
     print("\nPlik języka: 321 run plik.321")
 
 
 def main(argv: list[str] | None = None) -> int:
     enable_colors()
-    parser = argparse.ArgumentParser(prog="321", description="Interpreter języka 321code")
-    parser.add_argument("command", nargs="?", default="help")
-    parser.add_argument("args", nargs="*")
-    ns = parser.parse_args(argv)
-    cmd = ns.command.lower()
-    if cmd in {"help", "pomoc", "--help"}:
+    raw_args = list(sys.argv[1:] if argv is None else argv)
+
+    # Handle standard Python-like flags ourselves so they show the 321code help.
+    if not raw_args or raw_args[0] in {"help", "pomoc", "--help", "-h"}:
         show_help()
         return 0
-    if cmd in {"version", "wersja", "--version"}:
+    if raw_args[0] in {"version", "wersja", "--version", "-V"}:
         print(paint(f"321code {__version__}", "green"))
         return 0
-    if cmd in {"run", "uruchom"}:
+
+    parser = argparse.ArgumentParser(
+        prog="321",
+        description="Interpreter języka 321code",
+        add_help=False,
+    )
+    parser.add_argument("command")
+    parser.add_argument("args", nargs="*")
+    try:
+        ns = parser.parse_args(raw_args)
+    except SystemExit as exc:
+        return int(exc.code)
+
+    cmd = ALIASES.get(ns.command.lower(), ns.command.lower())
+    if cmd == "run":
         if len(ns.args) != 1:
             error("Użycie: 321 run plik.321")
             return 2
         return run_file(Path(ns.args[0]))
     if cmd in {"start", "build"}:
+        if ns.args:
+            error(f"Użycie: 321 {cmd}")
+            return 2
         return run_script(cmd)
     if cmd == "ai":
         return ai_command(ns.args)
-    if cmd in {"packages", "pkg"}:
+    if cmd == "packages":
         from .packages import main as packages_main
         return packages_main(ns.args)
     if cmd == "install":
         from .packages import main as packages_main
         return packages_main(["install", *ns.args])
-    if cmd in {"init", "clear"}:
-        if cmd == "clear":
-            os.system("cls" if os.name == "nt" else "clear")
-            return 0
-        if cmd == "init":
-            path = Path("321code.json")
-            if path.exists():
-                error("321code.json już istnieje.")
-                return 1
-            path.write_text(json.dumps({"name": Path.cwd().name, "scripts": {}}, indent=2), encoding="utf-8")
-            success("Utworzono 321code.json")
-            return 0
+    if cmd == "clear":
+        if ns.args:
+            error("Użycie: 321 clear")
+            return 2
+        os.system("cls" if os.name == "nt" else "clear")
+        return 0
+    if cmd == "init":
+        if ns.args:
+            error("Użycie: 321 init")
+            return 2
+        path = Path("321code.json")
+        if path.exists():
+            error("321code.json już istnieje.")
+            return 1
+        path.write_text(
+            json.dumps({"name": Path.cwd().name, "scripts": {}}, indent=2),
+            encoding="utf-8",
+        )
+        success("Utworzono 321code.json")
+        return 0
+
     error(f"Nieznana komenda: {cmd}. Wpisz '321 help'.")
     return 2
 

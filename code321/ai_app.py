@@ -45,6 +45,7 @@ class Creator:
         self.heads = tk.StringVar(value="8")
         self.context = tk.StringVar(value="256")
         self.batch = tk.StringVar(value="8")
+        self.gradient_accumulation = tk.StringVar(value="1")
         self.learning_rate = tk.StringVar(value="0.0003")
         self.gpu = tk.StringVar(value="Auto")
         self.machine = tk.StringVar(value="Automatycznie")
@@ -161,6 +162,7 @@ class Creator:
             ("KONTEKST", self.context, ("128", "256", "512", "1024")),
             ("BATCH", self.batch, ("4", "8", "16", "32")),
             ("LEARNING RATE", self.learning_rate, ("0.001", "0.0005", "0.0003", "0.0001")),
+            ("GRADIENT ACCUMULATION", self.gradient_accumulation, ("1", "2", "4", "8", "16", "32")),
         ]
         for i, (label, variable, values) in enumerate(options):
             col = tk.Frame(settings, bg=PANEL)
@@ -169,13 +171,13 @@ class Creator:
             self._label(col, label, size=8, weight="bold").pack(anchor="w", pady=(0, 4))
             ttk.Combobox(col, textvariable=variable, values=values, state="readonly").pack(fill="x", ipady=3)
 
-        hardware = self._card(content, "03  •  Sprzęt", "Wybór jest informacyjny. Dostępne urządzenie obliczeniowe wykrywa PyTorch.")
+        hardware = self._card(content, "03  •  Sprzęt", "Wybierz automatyczne wykrywanie, CUDA lub CPU. CUDA wymaga zgodnego PyTorch i sterowników.")
         hardware.pack(fill="x", pady=(0, 12))
         hwrow = tk.Frame(hardware, bg=PANEL)
         hwrow.pack(fill="x", padx=18, pady=(0, 16))
         for label, variable, values in (
             ("URZĄDZENIE", self.machine, ("Automatycznie", "Komputer", "Laptop")),
-            ("GPU (OPCJONALNIE)", self.gpu, ("Auto", "NVIDIA", "AMD", "Intel", "CPU")),
+            ("TRYB OBLICZEŃ", self.gpu, ("Auto", "CUDA", "CPU")),
         ):
             col = tk.Frame(hwrow, bg=PANEL)
             col.pack(side="left", fill="x", expand=True, padx=(0, 12))
@@ -184,7 +186,7 @@ class Creator:
                          state="readonly").pack(fill="x", ipady=4)
 
         data = self._card(content, "04  •  Dane treningowe",
-                          "Wybierz plik TXT. Możesz też użyć przycisku AI — jego funkcja zostanie dodana w przyszłości.")
+                          "Wybierz plik TXT albo wklej własny tekst treningowy.")
         data.pack(fill="x", pady=(0, 12))
         file_row = tk.Frame(data, bg=PANEL)
         file_row.pack(fill="x", padx=18, pady=(0, 8))
@@ -192,7 +194,7 @@ class Creator:
                  insertbackground=TEXT, relief="flat", font=("Segoe UI", 10),
                  highlightthickness=1, highlightbackground=BORDER).pack(
                      side="left", fill="x", expand=True, ipady=11)
-        self._button(file_row, "AI", self.open_text_dialog).pack(side="left", padx=(8, 6))
+        self._button(file_row, "WKLEJ TEKST", self.open_text_dialog).pack(side="left", padx=(8, 6))
         self._button(file_row, "WYBIERZ TXT", self.browse).pack(side="left")
         tk.Label(data, textvariable=self.dataset_info, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(0, 14))
@@ -237,15 +239,15 @@ class Creator:
                  fg=MUTED, font=("Segoe UI", 9)).pack(side="left")
         def save_text():
             value = editor.get("1.0", "end-1c").strip()
-            if len(value.encode("utf-8")) < 512:
-                messagebox.showwarning("Za mało danych", "Wklej co najmniej 512 bajtów tekstu.", parent=win)
+            if len(value.encode("utf-8")) < 2048:
+                messagebox.showwarning("Za mało danych", "Wklej co najmniej 2048 bajtów tekstu.", parent=win)
                 return
             try:
                 folder = APP_DIR / "ai_datasets"
                 folder.mkdir(parents=True, exist_ok=True)
                 filename = safe_name(self.name.get() or "dataset") + "_dataset.txt"
                 path = folder / filename
-                path.write_text(value + "\\n", encoding="utf-8")
+                path.write_text(value + "\n", encoding="utf-8")
                 self.dataset.set(str(path))
                 self.status.set("Zapisano dane: " + path.name)
                 win.destroy()
@@ -271,7 +273,7 @@ class Creator:
             self.dataset_info.set("Wybrany plik nie istnieje.")
             return
         size = path.stat().st_size
-        self.dataset_info.set(f"✓  {path.name}   •   {size:,} bajtów   •   {'Dane gotowe' if size >= 512 and path.suffix.lower() == '.txt' else 'Sprawdź format lub rozmiar pliku'}")
+        self.dataset_info.set(f"✓  {path.name}   •   {size:,} bajtów   •   {'Dane gotowe' if size >= 2048 and path.suffix.lower() == '.txt' else 'Sprawdź format lub rozmiar pliku'}")
 
     def create(self):
         try:
@@ -282,21 +284,24 @@ class Creator:
             source = Path(self.dataset.get()).expanduser()
             if not source.is_file() or source.suffix.lower() != ".txt":
                 raise ValueError("Wybierz istniejący plik .txt z danymi treningowymi.")
-            if source.stat().st_size < 512:
+            if source.stat().st_size < 2048:
                 raise ValueError("Plik jest za mały. Dodaj co najmniej 512 bajtów tekstu.")
-            if int(self.width.get()) % int(self.heads.get()) != 0:\n                raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")\n            project = APP_DIR / "ai" / name
+            if int(self.width.get()) % int(self.heads.get()) != 0:
+                raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")
+            project = APP_DIR / "ai" / name
             project.mkdir(parents=True, exist_ok=False)
             cfg = {
                 "name": name,
                 "training_steps": steps,
                 "gpu_label": self.gpu.get().strip() or "Auto",
-                "device_preference": "auto",
+                "device_preference": "cpu" if self.gpu.get() == "CPU" else ("cuda" if self.gpu.get() == "CUDA" else "auto"),
                 "machine_type": self.machine.get(),
                 "width": int(self.width.get()),
                 "layers": int(self.layers.get()),
                 "heads": int(self.heads.get()),
                 "context": int(self.context.get()),
                 "batch_size": int(self.batch.get()),
+                "gradient_accumulation": int(self.gradient_accumulation.get()),
                 "learning_rate": float(self.learning_rate.get()),
                 "status": "training",
             }

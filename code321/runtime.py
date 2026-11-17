@@ -19,6 +19,14 @@ class ReturnSignal(Exception):
         self.value = value
 
 
+class BreakSignal(Exception):
+    pass
+
+
+class ContinueSignal(Exception):
+    pass
+
+
 @dataclass
 class Function:
     parameters: list[str]
@@ -35,11 +43,12 @@ def _expression(source: str, variables: dict[str, Any]) -> Any:
     binary = {
         ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
         ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv,
-        ast.Mod: operator.mod,
+        ast.Mod: operator.mod, ast.Pow: operator.pow,
     }
     compare = {
         ast.Eq: operator.eq, ast.NotEq: operator.ne, ast.Lt: operator.lt,
-        ast.LtE: operator.le, ast.Gt: operator.gt, ast.GtE: operator.ge,
+        ast.LtE: operator.le, ast.Gt: operator.gt, ast.GtE: operator.ge, ast.In: lambda a, b: a in b,
+        ast.NotIn: lambda a, b: a not in b,
     }
 
     def visit(item: ast.AST) -> Any:
@@ -72,8 +81,14 @@ def _expression(source: str, variables: dict[str, Any]) -> Any:
             value = visit(item.operand)
             return (not value) if isinstance(item.op, ast.Not) else (-value if isinstance(item.op, ast.USub) else +value)
         if isinstance(item, ast.BoolOp) and isinstance(item.op, (ast.And, ast.Or)):
-            values = [visit(v) for v in item.values]
-            return all(values) if isinstance(item.op, ast.And) else any(values)
+            result = visit(item.values[0])
+            for value_node in item.values[1:]:
+                if isinstance(item.op, ast.And) and not result:
+                    return result
+                if isinstance(item.op, ast.Or) and result:
+                    return result
+                result = visit(value_node)
+            return result
         if isinstance(item, ast.Compare):
             left = visit(item.left)
             for op, comparator in zip(item.ops, item.comparators):
@@ -87,6 +102,8 @@ def _expression(source: str, variables: dict[str, Any]) -> Any:
             builtins = {
                 "str": str, "int": int, "float": float, "bool": bool,
                 "len": len, "abs": abs, "min": min, "max": max, "round": round,
+                "sum": sum, "sorted": sorted, "reversed": lambda value: list(reversed(value)),
+                "any": any, "all": all, "type": lambda value: type(value).__name__,
             }
             if item.func.id in builtins:
                 return builtins[item.func.id](*args)
@@ -130,11 +147,23 @@ class Interpreter:
 
             if line.startswith("if ") and line.endswith(":"):
                 yes, after = self._block(lines, i + 1, indent)
-                no = []
-                if after < len(lines) and lines[after][0] == 0 and lines[after][1] == "else:":
-                    no, after = self._block(lines, after + 1, 0)
-                condition = bool(_expression(line[3:-1], self.variables))
-                self._execute(yes if condition else no)
+                branches = [(line[3:-1], yes)]
+                fallback = []
+                while after < len(lines) and lines[after][0] == 0:
+                    branch_line = lines[after][1]
+                    if branch_line.startswith("elif ") and branch_line.endswith(":"):
+                        body, after = self._block(lines, after + 1, 0)
+                        branches.append((branch_line[5:-1], body))
+                        continue
+                    if branch_line == "else:":
+                        fallback, after = self._block(lines, after + 1, 0)
+                    break
+                selected = fallback
+                for condition, body in branches:
+                    if _expression(condition, self.variables):
+                        selected = body
+                        break
+                self._execute(selected)
                 i = after
                 continue
 
@@ -145,7 +174,12 @@ class Interpreter:
                     count += 1
                     if count > MAX_LOOP_ITERATIONS:
                         raise ValueError(f"Przekroczono limit {MAX_LOOP_ITERATIONS} powtórzeń pętli")
-                    self._execute(body)
+                    try:
+                        self._execute(body)
+                    except ContinueSignal:
+                        continue
+                    except BreakSignal:
+                        break
                 i = after
                 continue
 
@@ -159,7 +193,12 @@ class Interpreter:
                     raise ValueError(f"Pętla przekracza limit {MAX_LOOP_ITERATIONS} powtórzeń")
                 for value in values:
                     self.variables[match.group(1)] = value
-                    self._execute(body)
+                    try:
+                        self._execute(body)
+                    except ContinueSignal:
+                        continue
+                    except BreakSignal:
+                        break
                 i = after
                 continue
 
@@ -175,13 +214,26 @@ class Interpreter:
                 i = after
                 continue
 
-            if line.startswith("print "):
+            if line == "break":
+                raise BreakSignal()
+            elif line == "continue":
+                raise ContinueSignal()
+            elif line.startswith("print "):
                 print(_expression(line[6:], self.variables))
             elif line.startswith("let ") or line.startswith("set "):
                 match = re.fullmatch(r"(?:let|set)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)", line)
                 if not match:
                     raise ValueError("Użycie: let nazwa = wyrażenie")
                 self.variables[match.group(1)] = _expression(match.group(2), self.variables)
+            elif re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\s*(?:\+=|-=|\*=|/=|%=)\s*.+", line):
+                match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\s*(\+=|-=|\*=|/=|%=)\s*(.+)", line)
+                name, op, expression = match.groups()
+                if name not in self.variables:
+                    raise ValueError(f"Nieznana zmienna: {name}")
+                right = _expression(expression, self.variables)
+                operations = {"+=": operator.add, "-=": operator.sub, "*=": operator.mul,
+                              "/=": operator.truediv, "%=": operator.mod}
+                self.variables[name] = operations[op](self.variables[name], right)
             elif line.startswith("return"):
                 value = line[6:].strip()
                 raise ReturnSignal(_expression(value, self.variables) if value else None)
@@ -215,9 +267,19 @@ class Interpreter:
         return None
 
     def import_file(self, filename: str):
-        candidate = (self.base_dir / filename).resolve()
-        if candidate.suffix != ".321" or self.base_dir not in candidate.parents:
-            raise ValueError("Import jest dozwolony tylko dla plików .321 wewnątrz folderu projektu")
+        relative = Path(filename)
+        if relative.is_absolute() or ".." in relative.parts or relative.suffix != ".321":
+            raise ValueError("Import wymaga względnej ścieżki do pliku .321 bez '..'")
+        project_packages = (self.base_dir / ".321code" / "packages").resolve()
+        package_candidate = (project_packages / relative).resolve()
+        if project_packages in package_candidate.parents and package_candidate.is_file():
+            candidate = package_candidate
+            allowed_root = project_packages
+        else:
+            candidate = (self.base_dir / relative).resolve()
+            allowed_root = self.base_dir
+        if allowed_root not in candidate.parents:
+            raise ValueError("Import jest dozwolony tylko z projektu lub zainstalowanego pakietu")
         if candidate in self.import_stack:
             raise ValueError(f"Wykryto zapętlony import: {filename}")
         if not candidate.is_file():
@@ -256,7 +318,7 @@ def run_file(path: Path) -> int:
         return 1
     try:
         Interpreter(path.parent).run(path)
-    except (OSError, UnicodeError, ValueError, TypeError, ZeroDivisionError, ReturnSignal) as exc:
+    except (OSError, UnicodeError, ValueError, TypeError, ZeroDivisionError, ReturnSignal, BreakSignal, ContinueSignal) as exc:
         print(f"{path}: {exc}", file=sys.stderr)
         return 1
     return 0

@@ -33,7 +33,7 @@ W folderze projektu znajdziesz:
 - `model/model.pt` — zapis wytrenowanego modelu;
 - `model/model_info.json` — informacje o modelu.
 
-Model jest małym, eksperymentalnym GPT typu Transformer trenowanym od zera na bajtach tekstu. Nie jest gotowym dużym chatbotem i nie ma wiedzy, której nie zawierają dane treningowe. Jakość zależy przede wszystkim od wielkości, różnorodności i poprawności danych. Dla modelu rozmownego używaj wielu przykładów w formacie:
+Model jest małym, eksperymentalnym GPT typu causal Transformer trenowanym od zera na bajtach UTF-8. To własna architektura 321code, a nie gotowy duży chatbot. Nie ma wiedzy, której nie zawierają dane treningowe. Jakość zależy przede wszystkim od jakości, różnorodności i wielkości danych. Trening obsługuje podział trening/walidacja, losowe batch'e, gradient accumulation, cosine learning-rate schedule, clipping gradientów, checkpointy latest/best i wznowienie treningu. Dla modelu rozmownego używaj wielu przykładów w formacie:
 
 ```text
 Użytkownik: Ile to 2 + 2?
@@ -42,7 +42,7 @@ Użytkownik: Czym jest fotosynteza?
 AI: To proces, w którym rośliny wykorzystują światło do wytwarzania związków odżywczych.
 ```
 
-Dane powinny być legalne do użycia, poprawne i zapisane w UTF-8. Wybierz plik TXT o wielkości co najmniej 512 bajtów. Mały przykładowy zbiór znajduje się w `examples/ai_training.txt`; służy tylko do sprawdzenia działania, nie do stworzenia dobrego, uniwersalnego AI.
+Dane powinny być legalne do użycia, poprawne i zapisane w UTF-8. Wybierz plik TXT o wielkości co najmniej 2048 bajtów; praktycznie potrzeba znacznie więcej danych niż minimum techniczne. Trening zapisuje `checkpoints/latest.pt`, `checkpoints/best.pt`, `training_metrics.jsonl`, `model/model.pt` i `model/model_info.json`. Mały przykładowy zbiór znajduje się w `examples/ai_training.txt`; służy tylko do sprawdzenia działania, nie do stworzenia dobrego, uniwersalnego AI.
 
 ### Wymagania i komendy AI
 
@@ -55,7 +55,7 @@ Trening wymaga PyTorch. W obecnej wersji moduł treningowy wymaga osobnej instal
 321 ai chat ai/MojModel
 ```
 
-GPU jest wykrywane automatycznie przez PyTorch. Nazwa GPU wpisana w kreatorze jest tylko informacyjna. Jeśli CUDA nie jest dostępna, trening użyje CPU. Duża liczba kroków może trwać bardzo długo, szczególnie na laptopie.
+GPU jest wykrywane automatycznie przez PyTorch. Nazwa GPU wpisana w kreatorze jest tylko informacyjna. Jeśli CUDA nie jest dostępna, trening użyje CPU. Duża liczba kroków może trwać bardzo długo, szczególnie na laptopie. Checkpoint pozwala wznowić trening po przerwaniu. Czat zachowuje kilka ostatnich wymian w kontekście, ale mały model nadal może generować błędny lub niezrozumiały tekst.
 
 
 ## Instalacja z CMD przez Python lub Javę
@@ -86,6 +86,31 @@ java Install321.java
 
 Program Java pobierze oficjalny `321code-Setup.exe` z repozytorium GitHub i automatycznie go uruchomi. W oknie instalatora kliknij **Zainstaluj**. Java nie zastępuje Pythona do uruchamiania wersji źródłowej — ten sposób uruchamia gotowy instalator Windows.
 
+## Więcej składni języka
+
+```321
+let wynik = 2
+wynik += 3
+print wynik ** 2
+
+if wynik < 4:
+    print "mniej"
+elif wynik in [5, 6]:
+    print "pasuje"
+else:
+    print "inne"
+
+for liczba in range(10):
+    if liczba == 2:
+        continue
+    if liczba == 6:
+        break
+    print liczba
+
+print sum([1, 2, 3])
+print sorted([3, 1, 2])
+```
+
 ## Przykład języka 321code
 
 ```321
@@ -106,7 +131,35 @@ Uruchom: `321 run examples/hello.321`.
 
 ## Status projektu
 
-Interpreter obsługuje zmienne, wyrażenia, warunki, pętle while i for, funkcje, lokalne importy, listy, krotki, słowniki oraz odczyt elementów przez indeks lub klucz. Funkcje wbudowane: str(), int(), float(), bool(), len(), abs(), min(), max(), round(), range(), upper(), lower() i input(). Konsola CMD ma kolorowe komunikaty pomocy, sukcesu, informacji i błędów. Katalog komend jest nadal niewielki. Menedżer pakietów `321 install` jest placeholderem i nie pobiera paczek.
+Interpreter obsługuje zmienne, wyrażenia, warunki if/elif/else, pętle while i for, break, continue, funkcje, lokalne importy, listy, krotki, słowniki oraz odczyt elementów przez indeks lub klucz. Operatory obejmują potęgowanie (**), sprawdzanie przynależności (in/not in) i skrócone AND/OR. Zmienne można aktualizować operatorami +=, -=, *=, /= i %=. Funkcje wbudowane: str(), int(), float(), bool(), len(), abs(), min(), max(), round(), sum(), sorted(), reversed(), any(), all(), type(), range(), upper(), lower() i input(). Konsola CMD ma kolorowe komunikaty pomocy, sukcesu, informacji i błędów. Katalog komend jest nadal niewielki. Menedżer pakietów obsługuje lokalne archiwa ZIP, rejestr HTTPS, kontrolę SHA-256, zależności, listę pakietów, usuwanie, aktualizacje, pakowanie i plik blokady `321code.lock`. Rejestr startuje pusty — instalacja pakietów po nazwie zacznie działać, gdy zostaną opublikowane wpisy z prawidłowym archiwum i sumą SHA-256.
+
+## Menedżer pakietów 321 Packages
+
+W folderze projektu (tam, gdzie znajduje się `321code.json`) używaj:
+
+```bat
+321 packages init ./moj-pakiet mojpakiet
+321 packages pack ./moj-pakiet
+321 install ./mojpakiet-1.0.0.zip
+321 packages list
+321 packages remove mojpakiet
+321 packages update
+321 packages help
+```
+
+Możesz też zainstalować lokalny plik ZIP:
+
+```bat
+321 install C:\\sciezka\\do\\pakietu.zip
+```
+
+Każdy pakiet musi zawierać `package.json` z nazwą i wersją oraz co najmniej jeden plik `.321`. Pakiety są instalowane do `.321code/packages/`, a dokładne wersje i sumy SHA-256 trafiają do `321code.lock`. Import modułu pakietu wygląda tak:
+
+```321
+import "hello321/main.321"
+```
+
+Menedżer sprawdza sumę SHA-256 archiwum, ogranicza rozmiar pobierania i rozpakowywania oraz odrzuca ścieżki wychodzące poza archiwum i dowiązania symboliczne. Rejestr jest hostowany w `packages/index.json`; początkowo jest pusty, więc instalowanie po nazwie wymaga najpierw opublikowania pakietów przez utrzymujących rejestr. Polecenie `update` aktualizuje pakiety z rejestru i pomija lokalne archiwa ZIP. Format publikacji opisano w `packages/README.md`.
 
 ## Licencja
 

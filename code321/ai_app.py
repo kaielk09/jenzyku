@@ -138,9 +138,9 @@ class Creator:
         content.pack(fill="both", expand=True, padx=28)
         intro = tk.Frame(content, bg=BG)
         intro.pack(fill="x", pady=(0, 14))
-        tk.Label(intro, text="Nowy projekt AI", bg=BG, fg=TEXT,
+        tk.Label(intro, text="Kontynuacja treningu" if self.resume_project else "Nowy projekt AI", bg=BG, fg=TEXT,
                  font=("Segoe UI", 16, "bold")).pack(anchor="w")
-        tk.Label(intro, text="Ustaw parametry, dodaj zbiór danych i rozpocznij trening od zera.",
+        tk.Label(intro, text=("Ustaw docelową liczbę kroków łącznie. Model wznowi trening z ostatniego checkpointu." if self.resume_project else "Ustaw parametry, dodaj zbiór danych i rozpocznij trening od zera."),
                  bg=BG, fg=MUTED, font=("Segoe UI", 10)).pack(anchor="w", pady=(3, 0))
 
         model = self._card(content, "01  •  Model", "Podstawowe informacje o projekcie.")
@@ -227,7 +227,7 @@ class Creator:
         footer.pack(fill="x", padx=28, pady=(2, 20))
         tk.Label(footer, textvariable=self.status, bg=BG, fg=MUTED,
                  font=("Segoe UI", 9)).pack(side="left")
-        self._button(footer, "UTWÓRZ MODEL  →", self.create, primary=True).pack(side="right")
+        self._button(footer, "WZNÓW TRENING  →" if self.resume_project else "UTWÓRZ MODEL  →", self.create, primary=True).pack(side="right")
 
     def open_text_dialog(self):
         win = tk.Toplevel(self.root)
@@ -304,8 +304,11 @@ class Creator:
                 raise ValueError("Plik jest za mały. Dodaj co najmniej 512 bajtów tekstu.")
             if int(self.width.get()) % int(self.heads.get()) != 0:
                 raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")
-            project = APP_DIR / "ai" / name
-            project.mkdir(parents=True, exist_ok=False)
+            project = self.resume_project or (APP_DIR / "ai" / name)
+            if self.resume_project and name != self.resume_project.name:
+                raise ValueError("Nazwa modelu w trybie kontynuacji nie może być zmieniona.")
+            if not self.resume_project:
+                project.mkdir(parents=True, exist_ok=False)
             cfg = {
                 "name": name,
                 "training_steps": steps,
@@ -324,18 +327,17 @@ class Creator:
             (project / "config.json").write_text(
                 json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8"
             )
-            shutil.copy2(source, project / "dataset.txt")
+            target_dataset = project / "dataset.txt"
+            if source.resolve() != target_dataset.resolve():
+                shutil.copy2(source, target_dataset)
             trainer = Path(__file__).resolve().with_name("ai_trainer.py")
             cmd = [sys.executable, str(trainer), str(project)]
             if sys.platform == "win32":
                 subprocess.Popen(["cmd", "/k", *cmd], cwd=str(project))
             else:
                 subprocess.Popen(cmd, cwd=str(project))
-            self.status.set(f"Projekt utworzony: {name}")
-            messagebox.showinfo(
-                "321 AI Creator",
-                f"Projekt „{name}” został utworzony.\n\nTrening uruchomił się w osobnym oknie terminala.\nFolder: {project}"
-            )
+            self.status.set(f"Trening uruchomiony: {name}")
+            messagebox.showinfo("321 AI", f"Trening modelu „{name}” został uruchomiony.\n\nFolder: {project}")
             self.root.destroy()
         except FileExistsError:
             messagebox.showerror("321 AI", "Folder o takiej nazwie już istnieje.")

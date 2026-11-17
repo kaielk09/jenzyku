@@ -134,7 +134,7 @@ Każdy pakiet musi zawierać `package.json` z nazwą i wersją oraz co najmniej 
 import "hello321/main.321"
 ```
 
-Menedżer sprawdza sumę SHA-256 archiwum, ogranicza rozmiar pobierania i rozpakowywania oraz odrzuca ścieżki wychodzące poza archiwum i dowiązania symboliczne. Rejestr jest hostowany w `packages/index.json`; początkowo jest pusty, więc instalowanie po nazwie wymaga najpierw opublikowania pakietów przez utrzymujących rejestr. Format publikacji opisano w `packages/README.md`.
+Menedżer sprawdza sumę SHA-256 archiwum, ogranicza rozmiar pobierania i rozpakowywania oraz odrzuca ścieżki wychodzące poza archiwum i dowiązania symboliczne. Rejestr jest hostowany w `packages/index.json`; początkowo jest pusty, więc instalowanie po nazwie wymaga najpierw opublikowania pakietów przez utrzymujących rejestr. Polecenie `update` aktualizuje pakiety z rejestru i pomija lokalne archiwa ZIP. Format publikacji opisano w `packages/README.md`.
 
 ## Licencja
 

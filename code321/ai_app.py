@@ -237,7 +237,7 @@ class Creator:
                  fg=MUTED, font=("Segoe UI", 9)).pack(side="left")
         def save_text():
             value = editor.get("1.0", "end-1c").strip()
-            if len(value.encode("utf-8")) < 512:
+            if len(value.encode("utf-8")) < 2048:
                 messagebox.showwarning("Za mało danych", "Wklej co najmniej 2048 bajtów tekstu.", parent=win)
                 return
             try:

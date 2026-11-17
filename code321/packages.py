@@ -257,6 +257,22 @@ def update(name: str | None = None, root: Path | None = None) -> list[str]:
     return messages
 
 
+def init_package(folder: str, name: str) -> Path:
+    target = Path(folder).expanduser().resolve()
+    package_name = _valid_name(name)
+    if target.exists():
+        raise PackageError("Folder docelowy już istnieje.")
+    target.mkdir(parents=True)
+    _write_json(target / "package.json", {
+        "name": package_name,
+        "version": "1.0.0",
+        "description": "Pakiet dla 321code",
+        "dependencies": {},
+    })
+    (target / "main.321").write_text(f'print "Witaj z pakietu {package_name}"\n', encoding="utf-8")
+    return target
+
+
 def pack(folder: str, output: str | None = None) -> Path:
     source = Path(folder).expanduser().resolve()
     if not source.is_dir():
@@ -277,7 +293,7 @@ def main(args: list[str]) -> int:
     import sys
     try:
         if not args or args[0] in {"help", "--help", "pomoc"}:
-            print("321 packages: install <nazwa|plik.zip> | list | remove <nazwa> | update [nazwa] | pack <folder> [plik.zip]")
+            print("321 packages: init <folder> <nazwa> | install <nazwa|plik.zip> | list | remove <nazwa> | update [nazwa] | pack <folder> [plik.zip]")
             return 0
         action, *rest = args
         if action in {"install", "add"} and len(rest) == 1:
@@ -293,6 +309,8 @@ def main(args: list[str]) -> int:
         elif action == "update" and len(rest) <= 1:
             messages = update(rest[0] if rest else None)
             print("\n".join(messages) if messages else "Brak pakietów do aktualizacji.")
+        elif action == "init" and len(rest) == 2:
+            print(f"Utworzono szkielet pakietu: {init_package(rest[0], rest[1])}")
         elif action == "pack" and 1 <= len(rest) <= 2:
             result = pack(rest[0], rest[1] if len(rest) == 2 else None)
             print(f"Utworzono: {result}")

@@ -58,6 +58,19 @@ class RuntimeTests(unittest.TestCase):
                 self.assertEqual(run_file(source), 0)
             self.assertEqual(output.getvalue(), "3\nALA\nala\nola\newa\n9\n")
 
+    def test_import_installed_package(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            package = root / ".321code" / "packages" / "hello321"
+            package.mkdir(parents=True)
+            (package / "main.321").write_text('print "pakiet OK"\\n', encoding="utf-8")
+            main = root / "main.321"
+            main.write_text('import "hello321/main.321"\\n', encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(run_file(main), 0)
+            self.assertEqual(output.getvalue(), "pakiet OK\\n")
+
     def test_import_inside_project(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

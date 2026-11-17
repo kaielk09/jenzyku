@@ -73,12 +73,11 @@ def install(status: tk.StringVar, button: ttk.Button, root: tk.Tk) -> None:
         add_user_path(BIN_DIR)
         messagebox.showinfo(
             "321code — instalacja zakończona",
-            "321code został zainstalowany.\n\n"
+            "321code został poprawnie zainstalowany.\n\n"
             f"Lokalizacja: {BIN_DIR}\n\n"
-            "Otwórz nowe okno CMD i wpisz: 321 help\n"
-            "Instalator EXE zostanie teraz usunięty.",
+            "Otwórz nowe okno CMD i wpisz: 321 help",
+            parent=root,
         )
-        schedule_installer_cleanup()
         root.destroy()
     except Exception as exc:
         button.configure(state="normal")
@@ -89,38 +88,74 @@ def install(status: tk.StringVar, button: ttk.Button, root: tk.Tk) -> None:
 def main() -> None:
     if os.name != "nt":
         raise SystemExit("Ten instalator jest przeznaczony dla Windows.")
-    root = tk.Tk()
-    root.title("321code — Instalator")
-    root.geometry("430x260")
-    root.resizable(False, False)
-    root.configure(bg="#171321")
-    tk.Label(
-        root, text="321code", font=("Segoe UI", 25, "bold"),
-        fg="#b78cff", bg="#171321"
-    ).pack(pady=(24, 4))
-    tk.Label(
-        root, text="Instalacja języka programowania 321code",
-        font=("Segoe UI", 10), fg="#eeeeF5", bg="#171321"
-    ).pack(pady=(0, 18))
-    tk.Label(
-        root, text=f"Folder: {INSTALL_DIR}",
-        font=("Segoe UI", 8), fg="#b9b3c7", bg="#171321", wraplength=390
-    ).pack(pady=(0, 15))
-    status = tk.StringVar(value="Gotowy do instalacji.")
-    tk.Label(
-        root, textvariable=status, font=("Segoe UI", 9),
-        fg="#d8c8ff", bg="#171321"
-    ).pack(pady=(0, 12))
-    button = ttk.Button(
-        root, text="Zainstaluj", command=lambda: install(status, button, root)
-    )
-    button.pack(ipadx=28, ipady=8)
-    tk.Label(
-        root, text="Python nie musi być zainstalowany.",
-        font=("Segoe UI", 8), fg="#aaa2b7", bg="#171321"
-    ).pack(side="bottom", pady=14)
-    root.mainloop()
 
+    root = tk.Tk()
+    root.title("321code Setup")
+    root.geometry("580x430")
+    root.minsize(540, 400)
+    root.configure(bg="#0b0b12")
+    root.resizable(True, True)
+
+    style = ttk.Style(root)
+    style.theme_use("clam")
+    style.configure("Install.TButton", font=("Segoe UI", 10, "bold"),
+                    padding=(18, 11), background="#8b5cf6",
+                    foreground="white", borderwidth=0)
+    style.map("Install.TButton",
+              background=[("active", "#7545df"), ("disabled", "#393247")],
+              foreground=[("disabled", "#aaa2b7")])
+
+    shell = tk.Frame(root, bg="#0b0b12")
+    shell.pack(fill="both", expand=True, padx=34, pady=28)
+    brand = tk.Frame(shell, bg="#0b0b12")
+    brand.pack(fill="x")
+    mark = tk.Frame(brand, bg="#8b5cf6", width=54, height=54)
+    mark.pack(side="left")
+    mark.pack_propagate(False)
+    tk.Label(mark, text="321", bg="#8b5cf6", fg="white",
+             font=("Segoe UI", 17, "bold")).place(relx=.5, rely=.5, anchor="center")
+    titles = tk.Frame(brand, bg="#0b0b12")
+    titles.pack(side="left", padx=15)
+    tk.Label(titles, text="321code", bg="#0b0b12", fg="#f4f1ff",
+             font=("Segoe UI", 23, "bold")).pack(anchor="w")
+    tk.Label(titles, text="INSTALATOR WINDOWS", bg="#0b0b12", fg="#a6a1b8",
+             font=("Segoe UI", 9, "bold")).pack(anchor="w")
+
+    tk.Frame(shell, bg="#29263a", height=1).pack(fill="x", pady=22)
+    tk.Label(shell, text="Zainstaluj 321code na swoim komputerze",
+             bg="#0b0b12", fg="#f4f1ff",
+             font=("Segoe UI", 16, "bold")).pack(anchor="w")
+    tk.Label(shell, text="Interpreter zostanie dodany do PATH Twojego konta Windows. "
+                         "Nie musisz instalować Pythona.",
+             bg="#0b0b12", fg="#a6a1b8", wraplength=480, justify="left",
+             font=("Segoe UI", 10)).pack(anchor="w", pady=(7, 18))
+
+    location = tk.Frame(shell, bg="#141421", highlightthickness=1,
+                        highlightbackground="#29263a")
+    location.pack(fill="x")
+    tk.Label(location, text="LOKALIZACJA INSTALACJI", bg="#141421",
+             fg="#a6a1b8", font=("Segoe UI", 8, "bold")).pack(anchor="w", padx=14, pady=(11, 3))
+    tk.Label(location, text=str(BIN_DIR), bg="#141421", fg="#f4f1ff",
+             font=("Segoe UI", 9), wraplength=470, justify="left").pack(
+                 anchor="w", padx=14, pady=(0, 12))
+
+    status = tk.StringVar(value="Gotowy do instalacji.")
+    tk.Label(shell, textvariable=status, bg="#0b0b12", fg="#c4b5fd",
+             font=("Segoe UI", 9)).pack(anchor="w", pady=(18, 10))
+    footer = tk.Frame(shell, bg="#0b0b12")
+    footer.pack(fill="x", side="bottom")
+    tk.Label(footer, text="321code • Instalator", bg="#0b0b12", fg="#777187",
+             font=("Segoe UI", 8)).pack(side="left")
+    button = ttk.Button(footer, text="ZAINSTALUJ  →",
+                        command=lambda: install(status, button, root),
+                        style="Install.TButton")
+    button.pack(side="right")
+
+    root.update_idletasks()
+    x = max(0, (root.winfo_screenwidth() - root.winfo_width()) // 2)
+    y = max(0, (root.winfo_screenheight() - root.winfo_height()) // 2)
+    root.geometry(f"+{x}+{y}")
+    root.mainloop()
 
 if __name__ == "__main__":
     main()

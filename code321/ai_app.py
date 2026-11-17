@@ -45,6 +45,7 @@ class Creator:
         self.heads = tk.StringVar(value="8")
         self.context = tk.StringVar(value="256")
         self.batch = tk.StringVar(value="8")
+        self.gradient_accumulation = tk.StringVar(value="1")
         self.learning_rate = tk.StringVar(value="0.0003")
         self.gpu = tk.StringVar(value="Auto")
         self.machine = tk.StringVar(value="Automatycznie")
@@ -161,6 +162,7 @@ class Creator:
             ("KONTEKST", self.context, ("128", "256", "512", "1024")),
             ("BATCH", self.batch, ("4", "8", "16", "32")),
             ("LEARNING RATE", self.learning_rate, ("0.001", "0.0005", "0.0003", "0.0001")),
+            ("GRADIENT ACCUMULATION", self.gradient_accumulation, ("1", "2", "4", "8", "16", "32")),
         ]
         for i, (label, variable, values) in enumerate(options):
             col = tk.Frame(settings, bg=PANEL)
@@ -169,13 +171,13 @@ class Creator:
             self._label(col, label, size=8, weight="bold").pack(anchor="w", pady=(0, 4))
             ttk.Combobox(col, textvariable=variable, values=values, state="readonly").pack(fill="x", ipady=3)
 
-        hardware = self._card(content, "03  •  Sprzęt", "Wybór jest informacyjny. Dostępne urządzenie obliczeniowe wykrywa PyTorch.")
+        hardware = self._card(content, "03  •  Sprzęt", "Wybierz automatyczne wykrywanie, CUDA lub CPU. CUDA wymaga zgodnego PyTorch i sterowników.")
         hardware.pack(fill="x", pady=(0, 12))
         hwrow = tk.Frame(hardware, bg=PANEL)
         hwrow.pack(fill="x", padx=18, pady=(0, 16))
         for label, variable, values in (
             ("URZĄDZENIE", self.machine, ("Automatycznie", "Komputer", "Laptop")),
-            ("GPU (OPCJONALNIE)", self.gpu, ("Auto", "NVIDIA", "AMD", "Intel", "CPU")),
+            ("TRYB OBLICZEŃ", self.gpu, ("Auto", "CUDA", "CPU")),
         ):
             col = tk.Frame(hwrow, bg=PANEL)
             col.pack(side="left", fill="x", expand=True, padx=(0, 12))
@@ -292,13 +294,13 @@ class Creator:
                 "name": name,
                 "training_steps": steps,
                 "gpu_label": self.gpu.get().strip() or "Auto",
-                "device_preference": "auto",
+                "device_preference": "cpu" if self.gpu.get() == "CPU" else ("cuda" if self.gpu.get() == "CUDA" else "auto"),
                 "machine_type": self.machine.get(),
                 "width": int(self.width.get()),
                 "layers": int(self.layers.get()),
                 "heads": int(self.heads.get()),
                 "context": int(self.context.get()),
-                "batch_size": int(self.batch.get()),
+                "batch_size": int(self.batch.get()),\n                "gradient_accumulation": int(self.gradient_accumulation.get()),
                 "learning_rate": float(self.learning_rate.get()),
                 "status": "training",
             }

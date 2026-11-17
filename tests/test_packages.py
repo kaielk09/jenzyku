@@ -26,6 +26,7 @@ class PackageManagerTests(unittest.TestCase):
             self.assertEqual(list_packages(root), [{
                 "name": "hello321", "version": "1.2.0", "installed": True
             }])
+            self.assertIn("Pominięto", update(root=root)[0])
             self.assertIn("hello321", remove("hello321", root))
             self.assertEqual(list_packages(root), [])
 

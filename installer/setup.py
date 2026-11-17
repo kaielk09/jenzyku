@@ -5,6 +5,7 @@ import ctypes
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -43,6 +44,35 @@ def add_user_path(directory: Path) -> None:
     )
 
 
+def schedule_installer_self_delete() -> None:
+    """Delete the downloaded setup EXE after this process exits (frozen build only)."""
+    if not getattr(sys, "frozen", False):
+        return
+    installer_path = Path(sys.executable).resolve()
+    if installer_path.name.lower() != "321code-setup.exe":
+        return
+    script_path = Path(os.environ.get("TEMP", str(Path.home()))) / f"321code-cleanup-{os.getpid()}.cmd"
+    quoted_exe = str(installer_path).replace('"', '""')
+    script = (
+        "@echo off\r\n"
+        ":retry\r\n"
+        "timeout /t 2 /nobreak >nul\r\n"
+        f'del /f /q "{quoted_exe}" >nul 2>&1\r\n'
+        f'if exist "{quoted_exe}" goto retry\r\n'
+        'del /f /q "%~f0" >nul 2>&1\r\n'
+    )
+    script_path.write_text(script, encoding="utf-8")
+    flags = getattr(subprocess, "DETACHED_PROCESS", 0x00000008) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+    subprocess.Popen(
+        ["cmd.exe", "/c", str(script_path)],
+        creationflags=flags,
+        close_fds=True,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
 def install(status: tk.StringVar, button: ttk.Button, root: tk.Tk) -> None:
     button.configure(state="disabled")
     try:
@@ -58,6 +88,7 @@ def install(status: tk.StringVar, button: ttk.Button, root: tk.Tk) -> None:
             "Otwórz nowe okno CMD i wpisz: 321 help",
             parent=root,
         )
+        schedule_installer_self_delete()
         root.destroy()
     except Exception as exc:
         button.configure(state="normal")

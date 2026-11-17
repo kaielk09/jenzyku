@@ -151,13 +151,18 @@ class Creator:
         right = tk.Frame(grid, bg=PANEL)
         left.pack(side="left", fill="x", expand=True, padx=(0, 10))
         right.pack(side="left", fill="x", expand=True, padx=(10, 0))
-        self._label(left, "NAZWA MODELU", size=9, weight="bold").pack(anchor="w")
-        name_row = tk.Frame(left, bg=PANEL)
-        name_row.pack(fill="x", pady=(5, 14))
-        tk.Entry(name_row, textvariable=self.name, bg=PANEL_ALT, fg=TEXT,
-                 insertbackground=TEXT, relief="flat", font=("Segoe UI", 11),
-                 highlightthickness=1, highlightbackground=BORDER,
-                 highlightcolor=PURPLE).pack(side="left", fill="x", expand=True, ipady=10)
+        if self.resume_project:
+            self._label(left, "KONTYNUACJA MODELU", size=9, weight="bold").pack(anchor="w")
+            tk.Label(left, text=self.name.get(), bg=PANEL, fg=TEXT,
+                     font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(10, 14))
+        else:
+            self._label(left, "NAZWA MODELU", size=9, weight="bold").pack(anchor="w")
+            name_row = tk.Frame(left, bg=PANEL)
+            name_row.pack(fill="x", pady=(5, 14))
+            tk.Entry(name_row, textvariable=self.name, bg=PANEL_ALT, fg=TEXT,
+                     insertbackground=TEXT, relief="flat", font=("Segoe UI", 11),
+                     highlightthickness=1, highlightbackground=BORDER,
+                     highlightcolor=PURPLE).pack(side="left", fill="x", expand=True, ipady=10)
         self._label(right, "LICZBA KROKÓW TRENINGU", size=9, weight="bold").pack(anchor="w")
         steps_row = tk.Frame(right, bg=PANEL)
         steps_row.pack(fill="x", pady=(5, 14))

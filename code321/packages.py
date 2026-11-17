@@ -94,7 +94,7 @@ def _safe_extract(archive: Path, destination: Path) -> None:
             for item in bundle.infolist():
                 name = item.filename.replace("\\", "/")
                 relative = PurePosixPath(name)
-                if relative.is_absolute() or not relative.parts or any(part in ("", ".", "..") for part in relative.parts):
+                if relative.is_absolute() or not relative.parts or ":" in relative.parts[0] or any(part in ("", ".", "..") for part in relative.parts):
                     raise PackageError(f"Niebezpieczna ścieżka w archiwum: {name}")
                 # ZIP symlinks are not needed for source packages; reject them.
                 mode = (item.external_attr >> 16) & 0xFFFF

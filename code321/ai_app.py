@@ -41,9 +41,20 @@ class Creator:
             except (OSError, json.JSONDecodeError):
                 saved = {}
         root.title("321 AI • Kontynuacja treningu" if self.resume_project else "321 AI Creator")
-        root.geometry("900x900")
-        root.minsize(780, 820)
+        if self.resume_project:
+            # Wznowienie wymaga tylko celu krokow; reszta jest zapisana w projekcie.
+            root.geometry("720x430")
+            root.minsize(620, 380)
+        else:
+            root.geometry("1100x820")
+            root.minsize(850, 680)
         root.configure(bg=BG)
+        if not self.resume_project and sys.platform == "win32":
+            try:
+                root.state("zoomed")
+            except tk.TclError:
+                pass
+        root.bind("<F11>", self._toggle_maximize)
 
         self.name = tk.StringVar(value=saved.get("name", "MojModel"))
         checkpoint = self.resume_project / "checkpoints" / "latest.pt" if self.resume_project else None
@@ -71,6 +82,12 @@ class Creator:
         self._style()
         self._build()
         self.dataset.trace_add("write", lambda *_: self._update_dataset_info())
+
+    def _toggle_maximize(self, _event=None):
+        try:
+            self.root.state("normal" if self.root.state() == "zoomed" else "zoomed")
+        except tk.TclError:
+            pass
 
     def _style(self):
         style = ttk.Style()
@@ -227,6 +244,12 @@ class Creator:
         tk.Label(note, text="To mały model eksperymentalny trenowany od zera. Nie będzie działał jak duży chatbot bez dużego i dobrego zbioru danych. Trening może długo obciążać komputer.",
                  bg="#171426", fg="#c4bfd0", font=("Segoe UI", 9),
                  wraplength=790, justify="left").pack(anchor="w", padx=14, pady=(0, 10))
+
+        if self.resume_project:
+            advanced.pack_forget()
+            hardware.pack_forget()
+            data.pack_forget()
+            note.pack_forget()
 
         footer = tk.Frame(self.root, bg=BG)
         footer.pack(fill="x", padx=28, pady=(2, 20))

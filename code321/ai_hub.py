@@ -1,5 +1,6 @@
 """321 AI Studio: library, export, continued training and chat."""
 import json
+import sys
 import tkinter as tk
 import zipfile
 from pathlib import Path
@@ -55,8 +56,21 @@ class Studio:
         root.geometry("1080x720")
         root.minsize(850, 600)
         root.configure(bg=BG)
+        # Prawdziwe maksymalizowanie Windows; systemowy pasek tytulu zostaje.
+        if sys.platform == "win32":
+            try:
+                root.state("zoomed")
+            except tk.TclError:
+                pass
+        root.bind("<F11>", self.toggle_maximize)
         self.build()
         self.refresh()
+
+    def toggle_maximize(self, _event=None):
+        try:
+            self.root.state("normal" if self.root.state() == "zoomed" else "zoomed")
+        except tk.TclError:
+            pass
 
     def button(self, parent, text, command, primary=False):
         return tk.Button(parent, text=text, command=command,

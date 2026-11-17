@@ -23,6 +23,12 @@ Następnie otwórz nowe okno CMD i używaj:
 
 **Uwaga:** skrypt BAT buduje instalator na Windows. Nie jest to gotowy plik EXE przechowywany w repozytorium — EXE powstaje dopiero po uruchomieniu skryptu. Build nie został jeszcze potwierdzony na rzeczywistym komputerze Windows.
 
+## Okna Windows 321 AI i instalatora
+
+Okna 321 AI Studio oraz czatu uruchamiają się zmaksymalizowane na Windows. Zachowują natywny pasek tytułu systemu Windows z przyciskami minimalizacji, maksymalizacji/przywrócenia i zamknięcia. Klawisz F11 przełącza maksymalizację. Kreator nowego modelu otwiera się w dużym oknie, natomiast ekran **Trenuj dalej** jest celowo kompaktowy i pokazuje tylko nazwę modelu oraz docelową liczbę kroków — parametry i dane są już zapisane w projekcie.
+
+`321code-Setup.exe` jest prawdziwym instalatorem okienkowym zbudowanym przez PyInstaller w trybie `--windowed`, a nie ekranem tekstowym w CMD. Ma standardowe przyciski okna Windows i pozostaje zwykłym plikiem instalatora po zakończeniu instalacji.
+
 ## 321 AI — tworzenie własnego modelu
 
 `321 ai` otwiera okienkowy 321 AI Creator. Wybierasz nazwę modelu, liczbę kroków, opis GPU i plik TXT z danymi. Po kliknięciu CREATE MODEL program tworzy folder `ai/<nazwa-modelu>/` i rozpoczyna trening.

@@ -5,7 +5,6 @@ import ctypes
 import os
 from pathlib import Path
 import shutil
-import subprocess
 import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -41,25 +40,6 @@ def add_user_path(directory: Path) -> None:
 
     ctypes.windll.user32.SendMessageTimeoutW(
         0xFFFF, 0x001A, 0, "Environment", 0x0002, 5000, None
-    )
-
-
-def schedule_installer_cleanup() -> None:
-    if not getattr(sys, "frozen", False):
-        return
-    installer = Path(sys.executable).resolve()
-    script = Path(os.environ.get("TEMP", str(Path.home()))) / "321code-remove-setup.cmd"
-    script.write_text(
-        "@echo off\r\n"
-        "timeout /t 3 /nobreak >nul\r\n"
-        f'del /f /q "{installer}" >nul 2>&1\r\n'
-        'del /f /q "%~f0" >nul 2>&1\r\n',
-        encoding="utf-8",
-    )
-    subprocess.Popen(
-        f'start "" /min cmd.exe /c "{script}"',
-        shell=True,
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
 
 

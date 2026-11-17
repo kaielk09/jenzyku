@@ -41,9 +41,20 @@ class Creator:
             except (OSError, json.JSONDecodeError):
                 saved = {}
         root.title("321 AI • Kontynuacja treningu" if self.resume_project else "321 AI Creator")
-        root.geometry("900x900")
-        root.minsize(780, 820)
+        if self.resume_project:
+            # Wznowienie wymaga tylko celu krokow; reszta jest zapisana w projekcie.
+            root.geometry("720x430")
+            root.minsize(620, 380)
+        else:
+            root.geometry("1100x820")
+            root.minsize(850, 680)
         root.configure(bg=BG)
+        if not self.resume_project and sys.platform == "win32":
+            try:
+                root.state("zoomed")
+            except tk.TclError:
+                pass
+        root.bind("<F11>", self._toggle_maximize)
 
         self.name = tk.StringVar(value=saved.get("name", "MojModel"))
         checkpoint = self.resume_project / "checkpoints" / "latest.pt" if self.resume_project else None
@@ -71,6 +82,12 @@ class Creator:
         self._style()
         self._build()
         self.dataset.trace_add("write", lambda *_: self._update_dataset_info())
+
+    def _toggle_maximize(self, _event=None):
+        try:
+            self.root.state("normal" if self.root.state() == "zoomed" else "zoomed")
+        except tk.TclError:
+            pass
 
     def _style(self):
         style = ttk.Style()
@@ -173,6 +190,7 @@ class Creator:
                  font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
 
         advanced = self._card(content, "02  •  Architektura AI", "Konfiguruj wielkość sieci. Większe modele wymagają więcej pamięci i mocniejszego sprzętu.")
+        if not self.resume_project:
         advanced.pack(fill="x", pady=(0, 12))
         settings = tk.Frame(advanced, bg=PANEL)
         settings.pack(fill="x", padx=18, pady=(0, 14))
@@ -193,6 +211,7 @@ class Creator:
             ttk.Combobox(col, textvariable=variable, values=values, state="readonly").pack(fill="x", ipady=3)
 
         hardware = self._card(content, "03  •  Sprzęt", "Wybierz automatyczne wykrywanie, CUDA lub CPU. CUDA wymaga zgodnego PyTorch i sterowników.")
+        if not self.resume_project:
         hardware.pack(fill="x", pady=(0, 12))
         hwrow = tk.Frame(hardware, bg=PANEL)
         hwrow.pack(fill="x", padx=18, pady=(0, 16))
@@ -208,6 +227,7 @@ class Creator:
 
         data = self._card(content, "04  •  Dane treningowe",
                           "Wybierz plik TXT albo wklej własny tekst treningowy.")
+        if not self.resume_project:
         data.pack(fill="x", pady=(0, 12))
         file_row = tk.Frame(data, bg=PANEL)
         file_row.pack(fill="x", padx=18, pady=(0, 8))
@@ -221,6 +241,7 @@ class Creator:
                  font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(0, 14))
 
         note = tk.Frame(content, bg="#171426", highlightthickness=1, highlightbackground="#3b2d59")
+        if not self.resume_project:
         note.pack(fill="x", pady=(0, 12))
         tk.Label(note, text="ⓘ  Warto wiedzieć", bg="#171426", fg="#c4b5fd",
                  font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=14, pady=(10, 2))

@@ -1,37 +1,37 @@
 {
   "language": "321code",
-  "schema_version": 1,
-  "note": "Command catalogue for the 321code CLI and language.",
+  "schema_version": 2,
+  "note": "Only implemented CLI commands are listed here. Language statements are documented separately.",
   "commands": [
     {
       "name": "help",
-      "aliases": [
-        "pomoc"
-      ],
+      "aliases": ["pomoc", "--help", "-h"],
       "category": "core",
-      "description": "Pokazuje listę komend."
+      "description": "Pokazuje pomoc i listę działających komend."
     },
     {
       "name": "version",
-      "aliases": [
-        "wersja"
-      ],
+      "aliases": ["wersja", "--version", "-V"],
       "category": "core",
       "description": "Pokazuje wersję 321code."
     },
     {
       "name": "run",
-      "aliases": [
-        "uruchom"
-      ],
+      "aliases": ["uruchom"],
       "category": "language",
-      "description": "Uruchamia plik .321."
+      "description": "Uruchamia plik programu .321."
+    },
+    {
+      "name": "init",
+      "aliases": ["create"],
+      "category": "project",
+      "description": "Tworzy plik 321code.json w bieżącym folderze."
     },
     {
       "name": "start",
       "aliases": [],
       "category": "project",
-      "description": "Uruchamia skrypt start z 321code.json (odpowiednik npm start)."
+      "description": "Uruchamia skrypt start z 321code.json."
     },
     {
       "name": "build",
@@ -40,118 +40,28 @@
       "description": "Uruchamia skrypt build z 321code.json."
     },
     {
-      "name": "init",
-      "aliases": [
-        "create"
-      ],
-      "category": "project",
-      "description": "Tworzy podstawowy plik 321code.json."
-    },
-    {
       "name": "install",
-      "aliases": [
-        "add"
-      ],
+      "aliases": ["add"],
       "category": "packages",
-      "description": "Instaluje pakiet lub lokalne archiwum ZIP."
+      "description": "Instaluje pakiet z rejestru lub lokalnego pliku ZIP."
     },
     {
       "name": "packages",
-      "aliases": [
-        "pkg"
-      ],
+      "aliases": ["pkg"],
       "category": "packages",
-      "description": "Zarządza pakietami: list, remove, update, pack."
+      "description": "Zarządza pakietami: help, init, install, list, remove, update, pack."
     },
     {
       "name": "clear",
-      "aliases": [
-        "cls"
-      ],
+      "aliases": ["cls"],
       "category": "terminal",
-      "description": "Czyści ekran terminala."
+      "description": "Czyści ekran CMD."
     },
     {
-      "name": "print",
-      "aliases": [
-        "echo"
-      ],
-      "category": "language",
-      "description": "Wyświetla tekst w programie .321."
-    },
-    {
-      "name": "let",
-      "aliases": [
-        "var"
-      ],
-      "category": "language",
-      "description": "Tworzy zmienną tekstową."
-    },
-    {
-      "name": "file.list",
-      "aliases": [
-        "ls"
-      ],
-      "category": "files",
-      "description": "W przygotowaniu: komenda listowania plików."
-    },
-    {
-      "name": "file.read",
-      "aliases": [
-        "cat"
-      ],
-      "category": "files",
-      "description": "W przygotowaniu: komenda odczytu pliku."
-    },
-    {
-      "name": "file.write",
+      "name": "ai",
       "aliases": [],
-      "category": "files",
-      "description": "W przygotowaniu: komenda zapisu pliku."
-    },
-    {
-      "name": "net.get",
-      "aliases": [
-        "http.get"
-      ],
-      "category": "network",
-      "description": "W przygotowaniu: komenda żądania HTTP."
-    },
-    {
-      "name": "json.parse",
-      "aliases": [],
-      "category": "data",
-      "description": "W przygotowaniu: komenda parsowania JSON."
-    },
-    {
-      "name": "text.upper",
-      "aliases": [],
-      "category": "text",
-      "description": "W przygotowaniu: konwersja tekstu na wielkie litery."
-    },
-    {
-      "name": "text.lower",
-      "aliases": [],
-      "category": "text",
-      "description": "W przygotowaniu: konwersja tekstu na małe litery."
-    },
-    {
-      "name": "time.now",
-      "aliases": [],
-      "category": "system",
-      "description": "W przygotowaniu: komenda odczytu czasu."
-    },
-    {
-      "name": "math.sum",
-      "aliases": [],
-      "category": "math",
-      "description": "W przygotowaniu: suma liczb."
-    },
-    {
-      "name": "project.info",
-      "aliases": [],
-      "category": "project",
-      "description": "Planowane informacje o projekcie."
+      "category": "ai",
+      "description": "Otwiera kreator AI; podkomenda chat otwiera bibliotekę modeli i czat."
     }
   ]
 }

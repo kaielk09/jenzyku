@@ -81,18 +81,13 @@ def ai_command(args: list[str]) -> int:
         return creator_main()
     action, *rest = args
     if action in {"help", "pomoc"}:
-        print(paint("321 AI — tworzenie własnych modeli językowych", "purple"))
-        print("  321 ai                 Otwórz kreator modelu")
-        print("  321 ai train <folder>  Wytrenuj model z dataset.txt")
-        print("  321 ai chat <folder>   Otwórz okno czatu wytrenowanego modelu")
-        print("  Trening: checkpointy, walidacja, gradient accumulation, wznowienie")
+        print(paint("321 AI — tworzenie i obsługa własnych modeli", "purple"))
+        print("  321 ai       Otwórz kreator nowego modelu")
+        print("  321 ai chat  Otwórz bibliotekę modeli, eksport i czat")
         return 0
-    if action == "train":
-        from .ai_trainer import main as trainer_main
-        return trainer_main(rest)
-    if action == "chat":
-        from .ai_chat import main as chat_main
-        return chat_main(rest)
+    if action == "chat" and not rest:
+        from .ai_hub import main as studio_main
+        return studio_main()
     error("Nieznana komenda AI. Wpisz: 321 ai help")
     return 2
 

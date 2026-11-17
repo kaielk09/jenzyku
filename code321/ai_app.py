@@ -31,9 +31,16 @@ def safe_name(value: str) -> str:
 
 
 class Creator:
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: tk.Tk, resume_project: Path | None = None):
         self.root = root
-        root.title("321 AI Creator")
+        self.resume_project = resume_project.resolve() if resume_project else None
+        saved = {}
+        if self.resume_project:
+            try:
+                saved = json.loads((self.resume_project / "config.json").read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                saved = {}
+        root.title("321 AI • Kontynuacja treningu" if self.resume_project else "321 AI Creator")
         root.geometry("900x900")
         root.minsize(780, 820)
         root.configure(bg=BG)

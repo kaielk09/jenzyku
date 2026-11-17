@@ -42,7 +42,7 @@ Użytkownik: Czym jest fotosynteza?
 AI: To proces, w którym rośliny wykorzystują światło do wytwarzania związków odżywczych.
 ```
 
-Dane powinny być legalne do użycia, poprawne i zapisane w UTF-8. Wybierz plik TXT o wielkości co najmniej 512 bajtów; praktycznie potrzeba znacznie więcej danych niż minimum techniczne. Trening zapisuje `checkpoints/latest.pt`, `checkpoints/best.pt`, `training_metrics.jsonl`, `model/model.pt` i `model/model_info.json`. Mały przykładowy zbiór znajduje się w `examples/ai_training.txt`; służy tylko do sprawdzenia działania, nie do stworzenia dobrego, uniwersalnego AI.
+Dane powinny być legalne do użycia, poprawne i zapisane w UTF-8. Wybierz plik TXT o wielkości co najmniej 2048 bajtów; praktycznie potrzeba znacznie więcej danych niż minimum techniczne. Trening zapisuje `checkpoints/latest.pt`, `checkpoints/best.pt`, `training_metrics.jsonl`, `model/model.pt` i `model/model_info.json`. Mały przykładowy zbiór znajduje się w `examples/ai_training.txt`; służy tylko do sprawdzenia działania, nie do stworzenia dobrego, uniwersalnego AI.
 
 ### Wymagania i komendy AI
 
@@ -114,6 +114,8 @@ W folderze projektu (tam, gdzie znajduje się `321code.json`) używaj:
 
 ```bat
 321 install hello321
+321 packages init ./moj-pakiet mojpakiet
+321 packages pack ./moj-pakiet
 321 packages list
 321 packages remove hello321
 321 packages update

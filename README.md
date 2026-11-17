@@ -50,10 +50,12 @@ Trening wymaga PyTorch. W obecnej wersji moduł treningowy wymaga osobnej instal
 
 ```bat
 321 ai
-321 ai help
-321 ai train ai/MojModel
-321 ai chat ai/MojModel
+321 ai chat
 ```
+
+`321 ai chat` otwiera 321 AI Studio: bibliotekę wszystkich projektów modeli. Po wybraniu wytrenowanego modelu możesz pobrać ZIP z folderami `model-code/` i `model-weights/`, kontynuować trening z ostatniego checkpointu w dotychczasowym kreatorze albo otworzyć czat z tym modelem. Lista modeli odświeża się automatycznie. ZIP przygotowuje pliki do ręcznego umieszczenia w repozytorium kodu i repozytorium Hugging Face; nie publikuje ich automatycznie.
+
+W trybie kontynuacji nazwa i konfiguracja modelu są wczytywane z istniejącego projektu, a pole kroków oznacza docelową łączną liczbę kroków. Trening jest wznawiany z kompatybilnego checkpointu. `321 ai` nadal otwiera kreator tworzenia nowego modelu.
 
 GPU jest wykrywane automatycznie przez PyTorch. Nazwa GPU wpisana w kreatorze jest tylko informacyjna. Jeśli CUDA nie jest dostępna, trening użyje CPU. Duża liczba kroków może trwać bardzo długo, szczególnie na laptopie. Checkpoint pozwala wznowić trening po przerwaniu. Czat zachowuje kilka ostatnich wymian w kontekście, ale mały model nadal może generować błędny lub niezrozumiały tekst.
 

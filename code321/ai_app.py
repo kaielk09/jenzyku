@@ -31,25 +31,41 @@ def safe_name(value: str) -> str:
 
 
 class Creator:
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: tk.Tk, resume_project: Path | None = None):
         self.root = root
-        root.title("321 AI Creator")
+        self.resume_project = resume_project.resolve() if resume_project else None
+        saved = {}
+        if self.resume_project:
+            try:
+                saved = json.loads((self.resume_project / "config.json").read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                saved = {}
+        root.title("321 AI • Kontynuacja treningu" if self.resume_project else "321 AI Creator")
         root.geometry("900x900")
         root.minsize(780, 820)
         root.configure(bg=BG)
 
-        self.name = tk.StringVar(value="MojModel")
-        self.steps = tk.StringVar(value="10000")
-        self.width = tk.StringVar(value="256")
-        self.layers = tk.StringVar(value="6")
-        self.heads = tk.StringVar(value="8")
-        self.context = tk.StringVar(value="256")
-        self.batch = tk.StringVar(value="8")
-        self.gradient_accumulation = tk.StringVar(value="1")
-        self.learning_rate = tk.StringVar(value="0.0003")
-        self.gpu = tk.StringVar(value="Auto")
-        self.machine = tk.StringVar(value="Automatycznie")
-        self.dataset = tk.StringVar()
+        self.name = tk.StringVar(value=saved.get("name", "MojModel"))
+        checkpoint = self.resume_project / "checkpoints" / "latest.pt" if self.resume_project else None
+        saved_step = 0
+        if checkpoint and checkpoint.is_file():
+            try:
+                import torch
+                saved_step = int(torch.load(checkpoint, map_location="cpu", weights_only=True).get("step", 0))
+            except Exception:
+                saved_step = 0
+        self.steps = tk.StringVar(value=str(max(int(saved.get("training_steps", 10000)), saved_step + 5000) if self.resume_project else 10000))
+        self.width = tk.StringVar(value=str(saved.get("width", 256)))
+        self.layers = tk.StringVar(value=str(saved.get("layers", 6)))
+        self.heads = tk.StringVar(value=str(saved.get("heads", 8)))
+        self.context = tk.StringVar(value=str(saved.get("context", 256)))
+        self.batch = tk.StringVar(value=str(saved.get("batch_size", 8)))
+        self.gradient_accumulation = tk.StringVar(value=str(saved.get("gradient_accumulation", 1)))
+        self.learning_rate = tk.StringVar(value=str(saved.get("learning_rate", 0.0003)))
+        self.gpu = tk.StringVar(value="CPU" if saved.get("device_preference") == "cpu" else "Auto")
+        self.machine = tk.StringVar(value=saved.get("machine_type", "Automatycznie"))
+        existing_dataset = self.resume_project / "dataset.txt" if self.resume_project else None
+        self.dataset = tk.StringVar(value=str(existing_dataset) if existing_dataset and existing_dataset.is_file() else "")
         self.dataset_info = tk.StringVar(value="Nie wybrano pliku TXT")
         self.status = tk.StringVar(value="Gotowy do konfiguracji")
         self._style()
@@ -122,9 +138,9 @@ class Creator:
         content.pack(fill="both", expand=True, padx=28)
         intro = tk.Frame(content, bg=BG)
         intro.pack(fill="x", pady=(0, 14))
-        tk.Label(intro, text="Nowy projekt AI", bg=BG, fg=TEXT,
+        tk.Label(intro, text="Kontynuacja treningu" if self.resume_project else "Nowy projekt AI", bg=BG, fg=TEXT,
                  font=("Segoe UI", 16, "bold")).pack(anchor="w")
-        tk.Label(intro, text="Ustaw parametry, dodaj zbiór danych i rozpocznij trening od zera.",
+        tk.Label(intro, text=("Ustaw docelową liczbę kroków łącznie. Model wznowi trening z ostatniego checkpointu." if self.resume_project else "Ustaw parametry, dodaj zbiór danych i rozpocznij trening od zera."),
                  bg=BG, fg=MUTED, font=("Segoe UI", 10)).pack(anchor="w", pady=(3, 0))
 
         model = self._card(content, "01  •  Model", "Podstawowe informacje o projekcie.")
@@ -135,13 +151,18 @@ class Creator:
         right = tk.Frame(grid, bg=PANEL)
         left.pack(side="left", fill="x", expand=True, padx=(0, 10))
         right.pack(side="left", fill="x", expand=True, padx=(10, 0))
-        self._label(left, "NAZWA MODELU", size=9, weight="bold").pack(anchor="w")
-        name_row = tk.Frame(left, bg=PANEL)
-        name_row.pack(fill="x", pady=(5, 14))
-        tk.Entry(name_row, textvariable=self.name, bg=PANEL_ALT, fg=TEXT,
-                 insertbackground=TEXT, relief="flat", font=("Segoe UI", 11),
-                 highlightthickness=1, highlightbackground=BORDER,
-                 highlightcolor=PURPLE).pack(side="left", fill="x", expand=True, ipady=10)
+        if self.resume_project:
+            self._label(left, "KONTYNUACJA MODELU", size=9, weight="bold").pack(anchor="w")
+            tk.Label(left, text=self.name.get(), bg=PANEL, fg=TEXT,
+                     font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(10, 14))
+        else:
+            self._label(left, "NAZWA MODELU", size=9, weight="bold").pack(anchor="w")
+            name_row = tk.Frame(left, bg=PANEL)
+            name_row.pack(fill="x", pady=(5, 14))
+            tk.Entry(name_row, textvariable=self.name, bg=PANEL_ALT, fg=TEXT,
+                     insertbackground=TEXT, relief="flat", font=("Segoe UI", 11),
+                     highlightthickness=1, highlightbackground=BORDER,
+                     highlightcolor=PURPLE).pack(side="left", fill="x", expand=True, ipady=10)
         self._label(right, "LICZBA KROKÓW TRENINGU", size=9, weight="bold").pack(anchor="w")
         steps_row = tk.Frame(right, bg=PANEL)
         steps_row.pack(fill="x", pady=(5, 14))
@@ -211,7 +232,7 @@ class Creator:
         footer.pack(fill="x", padx=28, pady=(2, 20))
         tk.Label(footer, textvariable=self.status, bg=BG, fg=MUTED,
                  font=("Segoe UI", 9)).pack(side="left")
-        self._button(footer, "UTWÓRZ MODEL  →", self.create, primary=True).pack(side="right")
+        self._button(footer, "WZNÓW TRENING  →" if self.resume_project else "UTWÓRZ MODEL  →", self.create, primary=True).pack(side="right")
 
     def open_text_dialog(self):
         win = tk.Toplevel(self.root)
@@ -288,8 +309,11 @@ class Creator:
                 raise ValueError("Plik jest za mały. Dodaj co najmniej 512 bajtów tekstu.")
             if int(self.width.get()) % int(self.heads.get()) != 0:
                 raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")
-            project = APP_DIR / "ai" / name
-            project.mkdir(parents=True, exist_ok=False)
+            project = self.resume_project or (APP_DIR / "ai" / name)
+            if self.resume_project and name != self.resume_project.name:
+                raise ValueError("Nazwa modelu w trybie kontynuacji nie może być zmieniona.")
+            if not self.resume_project:
+                project.mkdir(parents=True, exist_ok=False)
             cfg = {
                 "name": name,
                 "training_steps": steps,
@@ -308,18 +332,17 @@ class Creator:
             (project / "config.json").write_text(
                 json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8"
             )
-            shutil.copy2(source, project / "dataset.txt")
+            target_dataset = project / "dataset.txt"
+            if source.resolve() != target_dataset.resolve():
+                shutil.copy2(source, target_dataset)
             trainer = Path(__file__).resolve().with_name("ai_trainer.py")
             cmd = [sys.executable, str(trainer), str(project)]
             if sys.platform == "win32":
                 subprocess.Popen(["cmd", "/k", *cmd], cwd=str(project))
             else:
                 subprocess.Popen(cmd, cwd=str(project))
-            self.status.set(f"Projekt utworzony: {name}")
-            messagebox.showinfo(
-                "321 AI Creator",
-                f"Projekt „{name}” został utworzony.\n\nTrening uruchomił się w osobnym oknie terminala.\nFolder: {project}"
-            )
+            self.status.set(f"Trening uruchomiony: {name}")
+            messagebox.showinfo("321 AI", f"Trening modelu „{name}” został uruchomiony.\n\nFolder: {project}")
             self.root.destroy()
         except FileExistsError:
             messagebox.showerror("321 AI", "Folder o takiej nazwie już istnieje.")

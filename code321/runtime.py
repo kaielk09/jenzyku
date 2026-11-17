@@ -174,7 +174,12 @@ class Interpreter:
                     count += 1
                     if count > MAX_LOOP_ITERATIONS:
                         raise ValueError(f"Przekroczono limit {MAX_LOOP_ITERATIONS} powtórzeń pętli")
-                    self._execute(body)
+                    try:
+                        self._execute(body)
+                    except ContinueSignal:
+                        continue
+                    except BreakSignal:
+                        break
                 i = after
                 continue
 
@@ -188,7 +193,12 @@ class Interpreter:
                     raise ValueError(f"Pętla przekracza limit {MAX_LOOP_ITERATIONS} powtórzeń")
                 for value in values:
                     self.variables[match.group(1)] = value
-                    self._execute(body)
+                    try:
+                        self._execute(body)
+                    except ContinueSignal:
+                        continue
+                    except BreakSignal:
+                        break
                 i = after
                 continue
 
@@ -204,13 +214,26 @@ class Interpreter:
                 i = after
                 continue
 
-            if line.startswith("print "):
+            if line == "break":
+                raise BreakSignal()
+            elif line == "continue":
+                raise ContinueSignal()
+            elif line.startswith("print "):
                 print(_expression(line[6:], self.variables))
             elif line.startswith("let ") or line.startswith("set "):
                 match = re.fullmatch(r"(?:let|set)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)", line)
                 if not match:
                     raise ValueError("Użycie: let nazwa = wyrażenie")
                 self.variables[match.group(1)] = _expression(match.group(2), self.variables)
+            elif re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\\s*(?:\\+=|-=|\\*=|/=|%=)\\s*.+", line):
+                match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\\s*(\\+=|-=|\\*=|/=|%=)\\s*(.+)", line)
+                name, op, expression = match.groups()
+                if name not in self.variables:
+                    raise ValueError(f"Nieznana zmienna: {name}")
+                right = _expression(expression, self.variables)
+                operations = {"+=": operator.add, "-=": operator.sub, "*=": operator.mul,
+                              "/=": operator.truediv, "%=": operator.mod}
+                self.variables[name] = operations[op](self.variables[name], right)
             elif line.startswith("return"):
                 value = line[6:].strip()
                 raise ReturnSignal(_expression(value, self.variables) if value else None)

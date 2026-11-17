@@ -253,6 +253,9 @@ def update(name: str | None = None, root: Path | None = None) -> list[str]:
     for package in selected:
         if package not in lock["packages"]:
             raise PackageError(f"Pakiet '{package}' nie jest zainstalowany.")
+        if lock["packages"][package].get("source") == "local":
+            messages.append(f"Pominięto {package}: pakiet lokalny nie pochodzi z rejestru.")
+            continue
         messages.append(install(package, project))
     return messages
 

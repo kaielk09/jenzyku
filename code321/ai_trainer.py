@@ -98,11 +98,11 @@ def main(argv=None) -> int:
     blocks = [part.strip().encode("utf-8") for part in dataset.read_text(encoding="utf-8-sig").replace("\r\n", "\n").split("\n\n") if part.strip()]
     if len(blocks) >= 5:
         random.shuffle(blocks)
-        val_count = max(1, int(len(blocks) * 0.05))
+        val_count = max(1, int(len(blocks) * 0.2))
         val_bytes = b"\n\n".join(blocks[:val_count])
         train_bytes = b"\n\n".join(blocks[val_count:])
     else:
-        split = int(len(raw) * 0.9)
+        split = int(len(raw) * 0.8)
         train_bytes, val_bytes = raw[:split], raw[split:]
     train_ids = torch.tensor(list(train_bytes), dtype=torch.long)
     val_ids = torch.tensor(list(val_bytes), dtype=torch.long)
@@ -136,6 +136,9 @@ def main(argv=None) -> int:
                 print("Checkpoint ma inną architekturę — rozpoczynam nowy trening.")
         except Exception as exc:
             print(f"Nie udało się wznowić checkpointu: {exc}")
+
+    if start_step == 0:
+        metrics_path.write_text("", encoding="utf-8")
 
     def sample_batch(source):
         starts = torch.randint(0, len(source) - context - 1, (batch_size,))

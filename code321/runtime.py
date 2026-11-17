@@ -19,6 +19,14 @@ class ReturnSignal(Exception):
         self.value = value
 
 
+class BreakSignal(Exception):
+    pass
+
+
+class ContinueSignal(Exception):
+    pass
+
+
 @dataclass
 class Function:
     parameters: list[str]
@@ -35,11 +43,12 @@ def _expression(source: str, variables: dict[str, Any]) -> Any:
     binary = {
         ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
         ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv,
-        ast.Mod: operator.mod,
+        ast.Mod: operator.mod, ast.Pow: operator.pow,
     }
     compare = {
         ast.Eq: operator.eq, ast.NotEq: operator.ne, ast.Lt: operator.lt,
-        ast.LtE: operator.le, ast.Gt: operator.gt, ast.GtE: operator.ge,
+        ast.LtE: operator.le, ast.Gt: operator.gt, ast.GtE: operator.ge, ast.In: lambda a, b: a in b,
+        ast.NotIn: lambda a, b: a not in b,
     }
 
     def visit(item: ast.AST) -> Any:
@@ -72,8 +81,14 @@ def _expression(source: str, variables: dict[str, Any]) -> Any:
             value = visit(item.operand)
             return (not value) if isinstance(item.op, ast.Not) else (-value if isinstance(item.op, ast.USub) else +value)
         if isinstance(item, ast.BoolOp) and isinstance(item.op, (ast.And, ast.Or)):
-            values = [visit(v) for v in item.values]
-            return all(values) if isinstance(item.op, ast.And) else any(values)
+            result = visit(item.values[0])
+            for value_node in item.values[1:]:
+                if isinstance(item.op, ast.And) and not result:
+                    return result
+                if isinstance(item.op, ast.Or) and result:
+                    return result
+                result = visit(value_node)
+            return result
         if isinstance(item, ast.Compare):
             left = visit(item.left)
             for op, comparator in zip(item.ops, item.comparators):
@@ -87,6 +102,8 @@ def _expression(source: str, variables: dict[str, Any]) -> Any:
             builtins = {
                 "str": str, "int": int, "float": float, "bool": bool,
                 "len": len, "abs": abs, "min": min, "max": max, "round": round,
+                "sum": sum, "sorted": sorted, "reversed": lambda value: list(reversed(value)),
+                "any": any, "all": all, "type": lambda value: type(value).__name__,
             }
             if item.func.id in builtins:
                 return builtins[item.func.id](*args)
@@ -130,11 +147,23 @@ class Interpreter:
 
             if line.startswith("if ") and line.endswith(":"):
                 yes, after = self._block(lines, i + 1, indent)
-                no = []
-                if after < len(lines) and lines[after][0] == 0 and lines[after][1] == "else:":
-                    no, after = self._block(lines, after + 1, 0)
-                condition = bool(_expression(line[3:-1], self.variables))
-                self._execute(yes if condition else no)
+                branches = [(line[3:-1], yes)]
+                fallback = []
+                while after < len(lines) and lines[after][0] == 0:
+                    branch_line = lines[after][1]
+                    if branch_line.startswith("elif ") and branch_line.endswith(":"):
+                        body, after = self._block(lines, after + 1, 0)
+                        branches.append((branch_line[5:-1], body))
+                        continue
+                    if branch_line == "else:":
+                        fallback, after = self._block(lines, after + 1, 0)
+                    break
+                selected = fallback
+                for condition, body in branches:
+                    if _expression(condition, self.variables):
+                        selected = body
+                        break
+                self._execute(selected)
                 i = after
                 continue
 

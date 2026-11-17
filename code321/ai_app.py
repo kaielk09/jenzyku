@@ -300,7 +300,8 @@ class Creator:
                 "layers": int(self.layers.get()),
                 "heads": int(self.heads.get()),
                 "context": int(self.context.get()),
-                "batch_size": int(self.batch.get()),\n                "gradient_accumulation": int(self.gradient_accumulation.get()),
+                "batch_size": int(self.batch.get()),
+                "gradient_accumulation": int(self.gradient_accumulation.get()),
                 "learning_rate": float(self.learning_rate.get()),
                 "status": "training",
             }

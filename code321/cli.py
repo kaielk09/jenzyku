@@ -85,6 +85,7 @@ def ai_command(args: list[str]) -> int:
         print("  321 ai                 Otwórz kreator modelu")
         print("  321 ai train <folder>  Wytrenuj model z dataset.txt")
         print("  321 ai chat <folder>   Otwórz okno czatu wytrenowanego modelu")
+        print("  Trening: checkpointy, walidacja, gradient accumulation, wznowienie")
         return 0
     if action == "train":
         from .ai_trainer import main as trainer_main
@@ -127,7 +128,13 @@ def main(argv: list[str] | None = None) -> int:
         return run_script(cmd)
     if cmd == "ai":
         return ai_command(ns.args)
-    if cmd in {"install", "init", "clear"}:
+    if cmd in {"packages", "pkg"}:
+        from .packages import main as packages_main
+        return packages_main(ns.args)
+    if cmd == "install":
+        from .packages import main as packages_main
+        return packages_main(["install", *ns.args])
+    if cmd in {"init", "clear"}:
         if cmd == "clear":
             os.system("cls" if os.name == "nt" else "clear")
             return 0
@@ -139,8 +146,6 @@ def main(argv: list[str] | None = None) -> int:
             path.write_text(json.dumps({"name": Path.cwd().name, "scripts": {}}, indent=2), encoding="utf-8")
             success("Utworzono 321code.json")
             return 0
-        print("Menedżer pakietów jest w przygotowaniu. Nie pobrano żadnych plików.")
-        return 0
     error(f"Nieznana komenda: {cmd}. Wpisz '321 help'.")
     return 2
 

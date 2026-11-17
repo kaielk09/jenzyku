@@ -123,19 +123,25 @@ def main(argv=None) -> int:
     if latest_path.is_file():
         try:
             saved = torch.load(latest_path, map_location=device, weights_only=True)
-            if saved.get("config") == model_cfg:
-                model.load_state_dict(saved["state_dict"])
-                if "optimizer" in saved:
-                    optimizer.load_state_dict(saved["optimizer"])
-                if "scheduler" in saved:
-                    scheduler.load_state_dict(saved["scheduler"])
-                start_step = int(saved.get("step", 0))
-                best_val = float(saved.get("best_val", best_val))
-                print(f"Wznowiono trening od kroku {start_step}.")
-            else:
-                print("Checkpoint ma inną architekturę — rozpoczynam nowy trening.")
+            if saved.get("config") != model_cfg:
+                print("Checkpoint ma inną architekturę. Nie nadpisuję istniejącego modelu.")
+                return 2
+            model.load_state_dict(saved["state_dict"])
+            if "optimizer" in saved:
+                optimizer.load_state_dict(saved["optimizer"])
+            if "scheduler" in saved:
+                scheduler.load_state_dict(saved["scheduler"])
+            start_step = int(saved.get("step", 0))
+            best_val = float(saved.get("best_val", best_val))
+            scheduler.T_max = max(1, steps)
+            print(f"Wznowiono trening od kroku {start_step}.")
         except Exception as exc:
-            print(f"Nie udało się wznowić checkpointu: {exc}")
+            print(f"Nie udało się wznowić checkpointu. Nie nadpisuję danych: {exc}")
+            return 2
+
+    if latest_path.is_file() and start_step >= steps:
+        print(f"Docelowa liczba kroków ({steps}) musi być większa niż checkpoint ({start_step}).")
+        return 2
 
     if start_step == 0:
         metrics_path.write_text("", encoding="utf-8")

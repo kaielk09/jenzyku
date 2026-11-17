@@ -172,3 +172,37 @@ Menedżer sprawdza sumę SHA-256 archiwum, ogranicza rozmiar pobierania i rozpak
 ## Licencja
 
 MIT. Zobacz `LICENSE`.
+
+
+## Komendy CMD (CLI)
+
+Po instalacji otwórz nowe okno CMD. Działające komendy główne:
+
+| Komenda | Opis |
+|---|---|
+| `321` / `321 help` / `321 --help` | Pomoc |
+| `321 version` / `321 --version` | Wersja |
+| `321 run plik.321` | Uruchamia program |
+| `321 init` | Tworzy `321code.json` |
+| `321 start` | Uruchamia skrypt `start` z konfiguracji |
+| `321 build` | Uruchamia skrypt `build` z konfiguracji |
+| `321 install nazwa-lub-plik.zip` | Instaluje pakiet |
+| `321 packages help` | Pomoc menedżera pakietów |
+| `321 clear` | Czyści terminal |
+| `321 ai` | Otwiera kreator AI |
+| `321 ai chat` | Otwiera bibliotekę modeli i czat |
+
+Działają też aliasy: `321 uruchom`, `321 create`, `321 add`, `321 pkg`, `321 cls`, `321 pomoc` i `321 wersja`. Flagi `321 --help`, `321 -h`, `321 --version` oraz `321 -V` są obsługiwane jak w typowych narzędziach CLI.
+
+Podkomendy menedżera pakietów:
+
+```bat
+321 packages init <folder> <nazwa>
+321 packages install <nazwa|plik.zip>
+321 packages list
+321 packages remove <nazwa>
+321 packages update [nazwa]
+321 packages pack <folder> [plik.zip]
+```
+
+Komendy typu `file.list`, `net.get` i `json.parse` nie są jeszcze częścią działającego CLI, więc nie są pokazywane jako dostępne polecenia.

@@ -184,7 +184,7 @@ class Creator:
                          state="readonly").pack(fill="x", ipady=4)
 
         data = self._card(content, "04  •  Dane treningowe",
-                          "Wybierz plik TXT. Możesz też użyć przycisku AI — jego funkcja zostanie dodana w przyszłości.")
+                          "Wybierz plik TXT albo wklej własny tekst treningowy.")
         data.pack(fill="x", pady=(0, 12))
         file_row = tk.Frame(data, bg=PANEL)
         file_row.pack(fill="x", padx=18, pady=(0, 8))
@@ -192,7 +192,7 @@ class Creator:
                  insertbackground=TEXT, relief="flat", font=("Segoe UI", 10),
                  highlightthickness=1, highlightbackground=BORDER).pack(
                      side="left", fill="x", expand=True, ipady=11)
-        self._button(file_row, "AI", self.open_text_dialog).pack(side="left", padx=(8, 6))
+        self._button(file_row, "WKLEJ TEKST", self.open_text_dialog).pack(side="left", padx=(8, 6))
         self._button(file_row, "WYBIERZ TXT", self.browse).pack(side="left")
         tk.Label(data, textvariable=self.dataset_info, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(0, 14))
@@ -238,7 +238,7 @@ class Creator:
         def save_text():
             value = editor.get("1.0", "end-1c").strip()
             if len(value.encode("utf-8")) < 512:
-                messagebox.showwarning("Za mało danych", "Wklej co najmniej 512 bajtów tekstu.", parent=win)
+                messagebox.showwarning("Za mało danych", "Wklej co najmniej 2048 bajtów tekstu.", parent=win)
                 return
             try:
                 folder = APP_DIR / "ai_datasets"
@@ -271,7 +271,7 @@ class Creator:
             self.dataset_info.set("Wybrany plik nie istnieje.")
             return
         size = path.stat().st_size
-        self.dataset_info.set(f"✓  {path.name}   •   {size:,} bajtów   •   {'Dane gotowe' if size >= 512 and path.suffix.lower() == '.txt' else 'Sprawdź format lub rozmiar pliku'}")
+        self.dataset_info.set(f"✓  {path.name}   •   {size:,} bajtów   •   {'Dane gotowe' if size >= 2048 and path.suffix.lower() == '.txt' else 'Sprawdź format lub rozmiar pliku'}")
 
     def create(self):
         try:
@@ -282,7 +282,7 @@ class Creator:
             source = Path(self.dataset.get()).expanduser()
             if not source.is_file() or source.suffix.lower() != ".txt":
                 raise ValueError("Wybierz istniejący plik .txt z danymi treningowymi.")
-            if source.stat().st_size < 512:
+            if source.stat().st_size < 2048:
                 raise ValueError("Plik jest za mały. Dodaj co najmniej 512 bajtów tekstu.")
             if int(self.width.get()) % int(self.heads.get()) != 0:
                 raise ValueError("Szerokość modelu musi być podzielna przez liczbę głowic.")

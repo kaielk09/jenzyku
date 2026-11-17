@@ -177,6 +177,39 @@ def _install_archive(archive: Path, root: Path, expected_name: str | None = None
     return manifest
 
 
+def _install_registry(name: str, root: Path, registry: dict, stack: set[str]) -> list[str]:
+    name = _valid_name(name)
+    if name in stack:
+        raise PackageError("Wykryto cykl zależności: " + " -> ".join([*stack, name]))
+    entry = registry.get(name)
+    if not isinstance(entry, dict):
+        raise PackageError(f"Nie znaleziono pakietu '{name}' w rejestrze.")
+    url, digest = entry.get("url"), entry.get("sha256")
+    if not isinstance(url, str) or not isinstance(digest, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
+        raise PackageError(f"Wpis pakietu '{name}' nie ma poprawnego URL lub SHA-256.")
+    messages = []
+    stack.add(name)
+    dependencies = entry.get("dependencies", {})
+    if not isinstance(dependencies, dict):
+        raise PackageError(f"Niepoprawna lista zależności pakietu '{name}'.")
+    for dependency, required_version in sorted(dependencies.items()):
+        dependency = _valid_name(str(dependency))
+        dependency_entry = registry.get(dependency)
+        if not isinstance(dependency_entry, dict):
+            raise PackageError(f"Brak zależności '{dependency}' wymaganej przez '{name}'.")
+        if required_version not in (None, "*", dependency_entry.get("version")):
+            raise PackageError(f"Zależność '{dependency}' wymaga wersji {required_version}, "
+                               f"a rejestr udostępnia {dependency_entry.get('version')}.")
+        messages.extend(_install_registry(dependency, root, registry, stack))
+    stack.remove(name)
+    with tempfile.TemporaryDirectory(prefix="321pkg-download-") as temp:
+        archive = Path(temp) / "package.zip"
+        _download(url, archive, MAX_ARCHIVE_BYTES)
+        manifest = _install_archive(archive, root, expected_name=name, expected_sha256=digest)
+    messages.append(f"Zainstalowano {manifest['name']}@{manifest['version']}.")
+    return messages
+
+
 def install(spec: str, root: Path | None = None) -> str:
     project = project_root(root)
     candidate = Path(spec).expanduser()
@@ -184,18 +217,8 @@ def install(spec: str, root: Path | None = None) -> str:
         manifest = _install_archive(candidate.resolve(), project)
         return f"Zainstalowano {manifest['name']}@{manifest['version']} z pliku."
     name = _valid_name(spec)
-    packages = _registry()
-    entry = packages.get(name)
-    if not isinstance(entry, dict):
-        raise PackageError(f"Nie znaleziono pakietu '{name}' w oficjalnym rejestrze.")
-    url, digest = entry.get("url"), entry.get("sha256")
-    if not isinstance(url, str) or not isinstance(digest, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
-        raise PackageError(f"Wpis pakietu '{name}' nie ma poprawnego URL lub SHA-256.")
-    with tempfile.TemporaryDirectory(prefix="321pkg-download-") as temp:
-        archive = Path(temp) / "package.zip"
-        _download(url, archive, MAX_ARCHIVE_BYTES)
-        manifest = _install_archive(archive, project, expected_name=name, expected_sha256=digest)
-    return f"Zainstalowano {manifest['name']}@{manifest['version']}."
+    messages = _install_registry(name, project, _registry(), set())
+    return "\n".join(messages)
 
 
 def list_packages(root: Path | None = None) -> list[dict]:

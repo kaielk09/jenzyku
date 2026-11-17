@@ -113,13 +113,12 @@ Interpreter obsługuje zmienne, wyrażenia, warunki, pętle while i for, funkcje
 W folderze projektu (tam, gdzie znajduje się `321code.json`) używaj:
 
 ```bat
-321 install hello321
 321 packages init ./moj-pakiet mojpakiet
 321 packages pack ./moj-pakiet
+321 install ./mojpakiet-1.0.0.zip
 321 packages list
-321 packages remove hello321
+321 packages remove mojpakiet
 321 packages update
-321 packages pack folder_pakietu
 321 packages help
 ```
 

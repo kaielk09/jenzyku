@@ -9,6 +9,8 @@ from . import ai_model
 from .ai_app import Creator, APP_DIR, BG, PANEL, PANEL_ALT, PURPLE, TEXT, MUTED, BORDER
 
 MODELS = APP_DIR / "ai"
+LEGACY_MODELS = Path.cwd() / "ai"
+MODEL_DIRS = [MODELS] + ([LEGACY_MODELS] if LEGACY_MODELS.resolve() != MODELS.resolve() else [])
 
 def read_json(path):
     try:
@@ -134,20 +136,26 @@ class Studio:
             b.configure(state="normal" if enabled else "disabled")
 
     def refresh(self):
-        old = self.selected.name if self.selected else None
+        old = str(self.selected) if self.selected else None
         for item in self.tree.get_children():
             self.tree.delete(item)
         MODELS.mkdir(parents=True, exist_ok=True)
         found = []
-        for p in sorted(MODELS.iterdir(), key=lambda x: x.name.lower()):
-            if not p.is_dir() or not (p / "config.json").is_file():
+        candidates = []
+        for folder in MODEL_DIRS:
+            if folder.exists():
+                candidates.extend(folder.iterdir())
+        seen = set()
+        for p in sorted(candidates, key=lambda x: x.name.lower()):
+            if not p.is_dir() or not (p / "config.json").is_file() or p.resolve() in seen:
                 continue
+            seen.add(p.resolve())
             cfg = read_json(p / "config.json")
             info = read_json(p / "model" / "model_info.json")
             status = read_json(p / "status.json")
             step = step_count(p, info, status)
             state = "Gotowy" if trained(p) else ("Checkpoint" if (p / "checkpoints" / "latest.pt").exists() else "Utworzony")
-            self.tree.insert("", "end", iid=p.name, text=cfg.get("name", p.name),
+            self.tree.insert("", "end", iid=str(p), text=cfg.get("name", p.name),
                              values=(state, f"{step:,}"))
             found.append(p)
         if old and self.tree.exists(old):
@@ -167,7 +175,7 @@ class Studio:
         selection = self.tree.selection()
         if not selection:
             return
-        p = MODELS / selection[0]
+        p = Path(selection[0])
         self.selected = p
         cfg = read_json(p / "config.json")
         info = read_json(p / "model" / "model_info.json")

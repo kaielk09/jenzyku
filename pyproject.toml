@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "321code-lang"
-version = "0.5.0"
+version = "0.5.1"
 description = "321code programming language and 321 AI model creator"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,7 +15,10 @@ dependencies = ["Pillow>=10"]
 [project.scripts]
 321 = "code321.cli:main"
 
-[project.optional-dependencies]\nimage-training = ["torch>=2.2", "numpy>=1.26", "Pillow>=10"]\n\n[tool.setuptools]
+[project.optional-dependencies]
+image-training = ["torch>=2.2", "numpy>=1.26", "Pillow>=10"]
+
+[tool.setuptools]
 packages = ["code321", "ai"]
 
 [tool.setuptools.package-data]

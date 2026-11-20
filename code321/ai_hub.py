@@ -161,7 +161,7 @@ class Studio:
         if old and self.tree.exists(old):
             self.tree.selection_set(old)
         elif found:
-            self.tree.selection_set(found[0].name)
+            self.tree.selection_set(str(found[0]))
         else:
             self.selected = None
             self.title.configure(text="Brak modeli")

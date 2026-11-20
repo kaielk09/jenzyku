@@ -58,7 +58,7 @@ def main():
  if args.steps<1 or args.steps>500000: raise SystemExit("Steps: 1-500000")
  data=ImageFolderDataset(args.images)
  device="cuda" if torch.cuda.is_available() else "cpu"
- dl=DataLoader(data,batch_size=args.batch,shuffle=True,drop_last=True,num_workers=0)
+ effective_batch=min(args.batch,len(data))\n dl=DataLoader(data,batch_size=effective_batch,shuffle=True,drop_last=True,num_workers=0)
  if len(dl)==0: raise SystemExit("Za mało obrazów na wybrany batch; zmniejsz batch lub dodaj obrazy.")
  out=Path(args.out); out.mkdir(parents=True,exist_ok=True)
  gen,disc=Generator().to(device),Discriminator().to(device)
@@ -96,7 +96,7 @@ def main():
      sample=((gen(fixed).cpu().clamp(-1,1)+1)*127.5).byte().permute(0,2,3,1).numpy()
      # save preview sheet as individual sample PNGs
      sample_dir=out/"samples"; sample_dir.mkdir(exist_ok=True)
-     for i,img in enumerate(sample[:4]): Image.fromarray(img).save(sample_dir/f"step_{step}_{i}.png")
+     for i,img in enumerate(sample[:4]): Image.fromarray(img).save(sample_dir/f"sample_{i}.png")
     gen.train()
     print(f"step {step}/{args.steps} | D {dloss.item():.3f} | G {gl.item():.3f}",flush=True)
   epoch+=1

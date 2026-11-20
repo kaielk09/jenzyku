@@ -200,10 +200,30 @@ class Studio:
         Creator(tk.Toplevel(self.root))
 
     def resume(self):
-        if self.selected and (self.selected / "checkpoints" / "latest.pt").is_file():
-            Creator(tk.Toplevel(self.root), resume_project=self.selected)
-        else:
+        if not self.selected or not (self.selected / "checkpoints" / "latest.pt").is_file():
             messagebox.showinfo("321 AI", "Brak checkpointu do wznowienia.")
+            return
+        project=self.selected
+        cfg=read_json(project/"config.json")
+        name=cfg.get("name",project.name)
+        chooser=tk.Toplevel(self.root)
+        chooser.title("321 AI • wybór treningu")
+        chooser.geometry("520x330")
+        chooser.configure(bg=BG)
+        chooser.transient(self.root)
+        tk.Label(chooser,text="WYBIERZ RODZAJ TRENINGU",bg=BG,fg=TEXT,font=("Segoe UI",16,"bold")).pack(anchor="w",padx=22,pady=(22,8))
+        tk.Label(chooser,text=f"Model: {name}",bg=BG,fg=MUTED,font=("Segoe UI",10)).pack(anchor="w",padx=22,pady=(0,14))
+        card=tk.Frame(chooser,bg=PANEL,highlightthickness=1,highlightbackground=BORDER)
+        card.pack(fill="both",expand=True,padx=22,pady=(0,18))
+        def choose_text():
+            chooser.destroy()
+            Creator(tk.Toplevel(self.root),resume_project=project)
+        def choose_image():
+            chooser.destroy()
+            from ai.image_gui import open_image_training
+            open_image_training(self.root,name)
+        self.button(card,"▤  TEKST — programowanie, Q&A, rozumowanie",choose_text,True).pack(fill="x",padx=14,pady=(18,8))
+        self.button(card,"▧  OBRAZY — własny trening generatora",choose_image).pack(fill="x",padx=14,pady=(0,18))
 
     def chat(self):
         if self.selected and trained(self.selected):

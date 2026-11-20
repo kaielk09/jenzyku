@@ -17,20 +17,13 @@ COLORS = {
     "red": "\033[91m", "purple": "\033[95m", "blue": "\033[94m",
 }
 
-# Aliases are handled here, not only displayed in the command catalogue.
 ALIASES = {
-    "pomoc": "help",
-    "wersja": "version",
-    "uruchom": "run",
-    "create": "init",
-    "add": "install",
-    "cls": "clear",
-    "pkg": "packages",
+    "pomoc": "help", "wersja": "version", "uruchom": "run",
+    "create": "init", "add": "install", "cls": "clear", "pkg": "packages",
 }
 
 
 def enable_colors() -> None:
-    """Enable ANSI virtual-terminal sequences in Windows CMD."""
     if os.name == "nt":
         try:
             import ctypes
@@ -82,8 +75,7 @@ def run_script(name: str) -> int:
     if not isinstance(command, list) or not command or not all(isinstance(x, str) for x in command):
         raise SystemExit(f"Brak poprawnego skryptu '{name}' w 321code.json.")
     info(f"321code: uruchamiam skrypt '{name}'")
-    result = subprocess.run(command, check=False)
-    return result.returncode
+    return subprocess.run(command, check=False).returncode
 
 
 def ai_command(args: list[str]) -> int:
@@ -123,33 +115,28 @@ def show_help() -> None:
     print("\n321 AI:")
     print("  321 ai")
     print("  321 ai chat")
+    print("\nWersja i aktualizacje:")
+    print("  321 version  Sprawdź wersję i dostępne aktualizacje")
     print("\nPlik języka: 321 run plik.321")
 
 
 def main(argv: list[str] | None = None) -> int:
     enable_colors()
     raw_args = list(sys.argv[1:] if argv is None else argv)
-
-    # Handle standard Python-like flags ourselves so they show the 321code help.
     if not raw_args or raw_args[0] in {"help", "pomoc", "--help", "-h"}:
         show_help()
         return 0
     if raw_args[0] in {"version", "wersja", "--version", "-V"}:
-        print(paint(f"321code {__version__}", "green"))
-        return 0
+        from .update_manager import version_command
+        return version_command(__version__)
 
-    parser = argparse.ArgumentParser(
-        prog="321",
-        description="Interpreter języka 321code",
-        add_help=False,
-    )
+    parser = argparse.ArgumentParser(prog="321", description="Interpreter języka 321code", add_help=False)
     parser.add_argument("command")
     parser.add_argument("args", nargs="*")
     try:
         ns = parser.parse_args(raw_args)
     except SystemExit as exc:
         return int(exc.code)
-
     cmd = ALIASES.get(ns.command.lower(), ns.command.lower())
     if cmd == "run":
         if len(ns.args) != 1:
@@ -183,13 +170,9 @@ def main(argv: list[str] | None = None) -> int:
         if path.exists():
             error("321code.json już istnieje.")
             return 1
-        path.write_text(
-            json.dumps({"name": Path.cwd().name, "scripts": {}}, indent=2),
-            encoding="utf-8",
-        )
+        path.write_text(json.dumps({"name": Path.cwd().name, "scripts": {}}, indent=2), encoding="utf-8")
         success("Utworzono 321code.json")
         return 0
-
     error(f"Nieznana komenda: {cmd}. Wpisz '321 help'.")
     return 2
 

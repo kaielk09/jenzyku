@@ -37,4 +37,21 @@ def open_image_training(parent,model_name):
    messagebox.showinfo("321 AI","Otwarto terminal: najpierw automatyczny dataset, następnie trening DDPM. Okno terminala pozostaw otwarte.",parent=w)
   except Exception as e: messagebox.showerror("Błąd",str(e),parent=w); btn.configure(state="normal")
  btn=tk.Button(w,text="START AUTOMATYCZNEGO DATASETU + TRENING  →",command=start,bg=PURPLE,fg="white",activebackground=PURPLE_HOVER,relief="flat",font=("Segoe UI",10,"bold"),padx=15,pady=11); btn.pack(fill="x",padx=24,pady=(0,22))
+ def generate_samples():
+  model=APP_DIR/"ai_images"/model_name/"training"/"image_model.pt"
+  if not model.is_file():
+   messagebox.showinfo("321 AI","Najpierw ukończ trening obrazów, żeby utworzyć checkpoint generatora.",parent=w); return
+  if getattr(sys,"frozen",False):
+   messagebox.showwarning("321 AI","Generator wymaga obecnie wersji Python; PyTorch nie jest jeszcze dołączony do EXE.",parent=w); return
+  try: import torch
+  except ImportError: messagebox.showerror("321 AI","Brak PyTorch. Zainstaluj: pip install torch",parent=w); return
+  dest=__import__("tkinter.filedialog",fromlist=["askdirectory"]).askdirectory(parent=w,title="Folder wynikowych obrazów")
+  if not dest:return
+  cmd=[sys.executable,"-m","ai.image_generate","--model",str(model),"--out",dest,"--count","4"]
+  try:
+   subprocess.Popen(["cmd","/k",*cmd] if sys.platform=="win32" else cmd,cwd=str(APP_DIR))
+   messagebox.showinfo("321 AI","Generator uruchomiony — zapisze 4 obrazy w wybranym folderze.",parent=w)
+  except Exception as e:messagebox.showerror("321 AI",str(e),parent=w)
+ genbtn=tk.Button(w,text="GENERUJ 4 OBRAZY Z WYTRAINOWANEGO MODELU",command=generate_samples,bg=PANEL_ALT,fg=TEXT,activebackground=PURPLE_HOVER,relief="flat",font=("Segoe UI",9,"bold"),padx=12,pady=8)
+ genbtn.pack(fill="x",padx=24,pady=(0,10))
  return w

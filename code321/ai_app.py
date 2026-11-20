@@ -229,12 +229,14 @@ class Creator:
         data.pack(fill="x", pady=(0, 12))
         file_row = tk.Frame(data, bg=PANEL)
         file_row.pack(fill="x", padx=18, pady=(0, 8))
-        tk.Entry(file_row, textvariable=self.dataset, bg=PANEL_ALT, fg=TEXT,
-                 insertbackground=TEXT, relief="flat", font=("Segoe UI", 10),
+        tk.Label(file_row, text="Wybierz źródło danych:", bg=PANEL, fg=MUTED,
+                 font=("Segoe UI", 10)).pack(side="left", padx=(0, 12))
+        self._button(file_row, "✦  AI", self.open_ai_generator, primary=True).pack(side="left", padx=(0, 8))
+        self._button(file_row, "📄  PLIK TXT", self.browse).pack(side="left")
+        tk.Entry(data, textvariable=self.dataset, bg=PANEL_ALT, fg=TEXT,
+                 insertbackground=TEXT, relief="flat", font=("Segoe UI", 9),
                  highlightthickness=1, highlightbackground=BORDER).pack(
-                     side="left", fill="x", expand=True, ipady=11)
-        self._button(file_row, "WKLEJ TEKST", self.open_text_dialog).pack(side="left", padx=(8, 6))
-        self._button(file_row, "WYBIERZ TXT", self.browse).pack(side="left")
+                     fill="x", padx=18, pady=(0, 8), ipady=8)
         tk.Label(data, textvariable=self.dataset_info, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(0, 14))
 
@@ -299,6 +301,20 @@ class Creator:
             except (OSError, ValueError) as exc:
                 messagebox.showerror("Nie udało się zapisać TXT", str(exc), parent=win)
         self._button(bottom, "DALEJ  →", save_text, primary=True).pack(side="right")
+
+    def open_ai_generator(self):
+        try:
+            from ai.gui import open_generator
+        except ImportError:
+            try:
+                from ..ai.gui import open_generator
+            except ImportError as exc:
+                messagebox.showerror("321 AI", f"Nie można załadować generatora AI: {exc}")
+                return
+        def attach_dataset(path):
+            self.dataset.set(path)
+            self.status.set("Generator AI: TXT automatycznie podłączony")
+        open_generator(self.root, safe_name(self.name.get() or "dataset"), attach_dataset)
 
     def browse(self):
         path = filedialog.askopenfilename(

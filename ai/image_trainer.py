@@ -58,7 +58,8 @@ def main():
  if args.steps<1 or args.steps>500000: raise SystemExit("Steps: 1-500000")
  data=ImageFolderDataset(args.images)
  device="cuda" if torch.cuda.is_available() else "cpu"
- effective_batch=min(args.batch,len(data))\n dl=DataLoader(data,batch_size=effective_batch,shuffle=True,drop_last=True,num_workers=0)
+ effective_batch=min(args.batch,len(data))
+ dl=DataLoader(data,batch_size=effective_batch,shuffle=True,drop_last=True,num_workers=0)
  if len(dl)==0: raise SystemExit("Za mało obrazów na wybrany batch; zmniejsz batch lub dodaj obrazy.")
  out=Path(args.out); out.mkdir(parents=True,exist_ok=True)
  gen,disc=Generator().to(device),Discriminator().to(device)

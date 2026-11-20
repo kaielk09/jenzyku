@@ -27,6 +27,15 @@ def open_image_training(parent, model_name):
   ttk.Combobox(col,textvariable=var,values=vals,state="readonly").pack(fill="x")
  status=tk.Label(win,text="Wymagane: PyTorch + Pillow • obrazy JPG/PNG/WEBP/BMP",bg=BG,fg=MUTED,font=("Segoe UI",9)); status.pack(anchor="w",padx=22,pady=(0,8))
  def start():
+  if getattr(sys,"frozen",False):
+   messagebox.showwarning("321 AI • Images","Tryb treningu obrazów wymaga obecnie uruchomienia wersji Python (nie samodzielnego 321.exe). W EXE nie jest jeszcze dołączony runtime PyTorch.",parent=win)
+   return
+  try:
+   import torch
+   from PIL import Image as _PILImage
+  except ImportError as dependency_error:
+   messagebox.showerror("321 AI • Images",f"Brak zależności treningu obrazów: {dependency_error}\\nInstaluj w Pythonie: pip install torch Pillow",parent=win)
+   return
   src=Path(folder.get()).expanduser()
   try:
    count=sum(1 for p in src.rglob("*") if p.suffix.lower() in (".png",".jpg",".jpeg",".bmp",".webp"))

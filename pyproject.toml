@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "321code contributors" }]
-dependencies = []
+dependencies = ["Pillow>=10"]
 
 [project.scripts]
 321 = "code321.cli:main"

@@ -11,7 +11,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-APP_DIR = Path.cwd()
+APP_DIR = Path.home() / "321code"\nAPP_DIR.mkdir(parents=True, exist_ok=True)
 BG = "#0b0b12"
 PANEL = "#141421"
 PANEL_ALT = "#1b1b2b"

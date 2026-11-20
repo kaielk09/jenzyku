@@ -15,7 +15,7 @@ dependencies = ["Pillow>=10"]
 [project.scripts]
 321 = "code321.cli:main"
 
-[tool.setuptools]
+[project.optional-dependencies]\nimage-training = ["torch>=2.2", "numpy>=1.26", "Pillow>=10"]\n\n[tool.setuptools]
 packages = ["code321", "ai"]
 
 [tool.setuptools.package-data]

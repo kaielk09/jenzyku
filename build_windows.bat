@@ -57,7 +57,7 @@ del /q "dist\321code-Setup.exe" 2>nul
 
 echo.
 echo [3/5] Budowanie interpretera 321.exe...
-"%PY%" -m PyInstaller --noconfirm --clean --onefile --console --name 321 --paths "%CD%" --collect-all code321 --distpath "%CD%\dist" --workpath "%CD%\.build\cli-work" --specpath "%CD%\.build" "installer\cli_entry.py"
+"%PY%" -m PyInstaller --noconfirm --clean --onefile --console --name 321 --paths "%CD%" --collect-all code321 --collect-all ai --distpath "%CD%\dist" --workpath "%CD%\.build\cli-work" --specpath "%CD%\.build" "installer\cli_entry.py"
 if errorlevel 1 goto :fail
 if not exist "dist\321.exe" (
     echo BLAD: PyInstaller zakonczyl prace, ale nie ma dist\321.exe.

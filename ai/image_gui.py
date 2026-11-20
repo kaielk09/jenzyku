@@ -1,57 +1,40 @@
-"""UI for the local-only 321 AI image training mode."""
+"""GUI for automatic 321 AI image dataset creation and local training."""
 from __future__ import annotations
-import subprocess,sys,threading
+import subprocess,sys
 import tkinter as tk
-from tkinter import filedialog,messagebox
+from tkinter import messagebox,ttk
 from pathlib import Path
 from code321.ai_app import BG,PANEL,PANEL_ALT,PURPLE,PURPLE_HOVER,TEXT,MUTED,BORDER,APP_DIR
 
-def open_image_training(parent, model_name):
- win=tk.Toplevel(parent); win.title("321 AI • Trening obrazów"); win.geometry("610x420"); win.configure(bg=BG); win.transient(parent)
- tk.Label(win,text="321 AI • TRENING GENEROWANIA OBRAZÓW",bg=BG,fg=TEXT,font=("Segoe UI",16,"bold")).pack(anchor="w",padx=22,pady=(20,5))
- tk.Label(win,text="Wybierz folder z własnymi obrazami. Model trenuje lokalnie, od zera — bez API i gotowych wag.",bg=BG,fg=MUTED,wraplength=550,justify="left").pack(anchor="w",padx=22,pady=(0,12))
- card=tk.Frame(win,bg=PANEL,highlightthickness=1,highlightbackground=BORDER); card.pack(fill="both",expand=True,padx=22,pady=(0,14))
- folder=tk.StringVar(); steps=tk.StringVar(value="5000"); batch=tk.StringVar(value="16")
- tk.Label(card,text="FOLDER OBRAZÓW",bg=PANEL,fg=MUTED,font=("Segoe UI",9,"bold")).pack(anchor="w",padx=16,pady=(16,4))
- row=tk.Frame(card,bg=PANEL); row.pack(fill="x",padx=16)
- tk.Entry(row,textvariable=folder,bg=PANEL_ALT,fg=TEXT,insertbackground=TEXT,relief="flat").pack(side="left",fill="x",expand=True,ipady=9)
- def choose():
-  p=filedialog.askdirectory(parent=win,title="Folder treningowy — obrazy")
-  if p: folder.set(p)
- tk.Button(row,text="WYBIERZ",command=choose,bg=PANEL_ALT,fg=TEXT,relief="flat",padx=12,pady=8).pack(side="left",padx=(8,0))
- settings=tk.Frame(card,bg=PANEL); settings.pack(fill="x",padx=16,pady=16)
- for lab,var,vals in [("KROKI TRENINGU",steps,("500","1000","5000","10000","25000")),("BATCH",batch,("4","8","16","32"))]:
-  col=tk.Frame(settings,bg=PANEL); col.pack(side="left",fill="x",expand=True,padx=(0,12))
-  tk.Label(col,text=lab,bg=PANEL,fg=MUTED,font=("Segoe UI",8,"bold")).pack(anchor="w",pady=(0,5))
-  from tkinter import ttk
-  ttk.Combobox(col,textvariable=var,values=vals,state="readonly").pack(fill="x")
- status=tk.Label(win,text="Wymagane: PyTorch + Pillow • obrazy JPG/PNG/WEBP/BMP",bg=BG,fg=MUTED,font=("Segoe UI",9)); status.pack(anchor="w",padx=22,pady=(0,8))
+def open_image_training(parent,model_name):
+ w=tk.Toplevel(parent); w.title("321 AI • Image training"); w.geometry("620x510"); w.configure(bg=BG); w.transient(parent)
+ tk.Label(w,text="321 AI  /  IMAGE LAB",bg=BG,fg=TEXT,font=("Segoe UI",19,"bold")).pack(anchor="w",padx=24,pady=(22,5))
+ tk.Label(w,text="Dataset jest pobierany automatycznie z Wikimedia Commons (tylko oznaczone wolne licencje / public domain), potem model DDPM trenuje od zera.",bg=BG,fg=MUTED,wraplength=560,justify="left").pack(anchor="w",padx=24,pady=(0,15))
+ card=tk.Frame(w,bg=PANEL,highlightthickness=1,highlightbackground=BORDER); card.pack(fill="both",expand=True,padx=24,pady=(0,18))
+ category=tk.StringVar(value="random"); count=tk.StringVar(value="120"); steps=tk.StringVar(value="8000"); batch=tk.StringVar(value="8")
+ def field(label,var,values):
+  f=tk.Frame(card,bg=PANEL); f.pack(fill="x",padx=18,pady=8)
+  tk.Label(f,text=label,bg=PANEL,fg=MUTED,font=("Segoe UI",9,"bold")).pack(anchor="w",pady=(0,4))
+  cb=ttk.Combobox(f,textvariable=var,values=values,state="readonly"); cb.pack(fill="x"); return cb
+ field("AUTOMATYCZNY TEMAT DATASETU",category,("random","nature","landscapes","animals","architecture","objects","space","plants"))
+ field("LICZBA OBRAZÓW",count,("40","80","120","200","300","500"))
+ field("KROKI TRENINGU DDPM",steps,("1000","2500","5000","8000","15000","30000"))
+ field("BATCH GPU/CPU",batch,("2","4","8","16","32"))
+ status=tk.Label(w,text="Wymagane biblioteki: PyTorch + Pillow + NumPy",bg=BG,fg=MUTED,font=("Segoe UI",9)); status.pack(anchor="w",padx=24,pady=(0,10))
  def start():
   if getattr(sys,"frozen",False):
-   messagebox.showwarning("321 AI • Images","Tryb treningu obrazów wymaga obecnie uruchomienia wersji Python (nie samodzielnego 321.exe). W EXE nie jest jeszcze dołączony runtime PyTorch.",parent=win)
-   return
+   messagebox.showwarning("321 AI","Trening wymaga wersji Python. PyTorch nie jest dołączony do instalatora EXE.",parent=w); return
   try:
-   import torch
-   from PIL import Image as _PILImage
-  except ImportError as dependency_error:
-   messagebox.showerror("321 AI • Images",f"Brak zależności treningu obrazów: {dependency_error}\\nInstaluj w Pythonie: pip install torch Pillow",parent=win)
-   return
-  src=Path(folder.get()).expanduser()
+   import torch, numpy
+   from PIL import Image
+  except ImportError as e:
+   messagebox.showerror("Brak pakietów",f"Zainstaluj: pip install torch numpy Pillow\n\n{e}",parent=w); return
+  target=APP_DIR/"ai_images"/model_name; target.mkdir(parents=True,exist_ok=True)
+  cmd=[sys.executable,"-m","ai.image_pipeline","--category",category.get(),"--count",count.get(),"--steps",steps.get(),"--batch",batch.get(),"--out",str(target)]
+  status.configure(text=f"Uruchomiono pipeline • zapis: {target}",fg="#c4b5fd"); btn.configure(state="disabled")
   try:
-   count=sum(1 for p in src.rglob("*") if p.suffix.lower() in (".png",".jpg",".jpeg",".bmp",".webp"))
-   if not src.is_dir() or count<4: raise ValueError("Wybierz folder zawierający minimum 4 obrazy.")
-   n=int(steps.get()); b=int(batch.get())
-   if not 1<=n<=500000 or b not in (4,8,16,32): raise ValueError("Nieprawidłowe parametry.")
-  except Exception as e: messagebox.showerror("321 AI",str(e),parent=win); return
-  out=APP_DIR/"ai_images"/model_name
-  out.mkdir(parents=True,exist_ok=True)
-  cmd=[sys.executable,"-m","ai.image_trainer","--images",str(src),"--out",str(out),"--steps",str(n),"--batch",str(b)]
-  status.configure(text=f"Uruchamiam trening • {count} obrazów • {out}",fg="#c4b5fd")
-  btn.configure(state="disabled")
-  try:
-   if sys.platform=="win32": subprocess.Popen(["cmd","/k",*cmd],cwd=str(APP_DIR))
-   else: subprocess.Popen(cmd,cwd=str(APP_DIR))
-   messagebox.showinfo("321 AI",f"Trening uruchomiony. Folder modelu:\n{out}",parent=win)
-  except Exception as e: messagebox.showerror("Błąd uruchomienia",str(e),parent=win); btn.configure(state="normal")
- btn=tk.Button(win,text="ROZPOCZNIJ TRENING OBRAZÓW  →",command=start,bg=PURPLE,fg="white",activebackground=PURPLE_HOVER,relief="flat",font=("Segoe UI",10,"bold"),padx=18,pady=10); btn.pack(anchor="e",padx=22,pady=(0,18))
- return win
+   subprocess.Popen(["cmd","/k",*cmd] if sys.platform=="win32" else cmd,cwd=str(APP_DIR))
+   messagebox.showinfo("321 AI","Otwarto terminal: najpierw automatyczny dataset, następnie trening DDPM. Okno terminala pozostaw otwarte.",parent=w)
+  except Exception as e: messagebox.showerror("Błąd",str(e),parent=w); btn.configure(state="normal")
+ btn=tk.Button(w,text="START AUTOMATYCZNEGO DATASETU + TRENING  →",command=start,bg=PURPLE,fg="white",activebackground=PURPLE_HOVER,relief="flat",font=("Segoe UI",10,"bold"),padx=15,pady=11); btn.pack(fill="x",padx=24,pady=(0,22))
+ return w

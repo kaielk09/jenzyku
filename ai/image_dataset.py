@@ -29,7 +29,7 @@ def api(params):
 
 def list_files(category,limit):
  # Commons categorymember results, randomize a broad sample
- data=api({"action":"query","list":"categorymembers","cmtitle":category,"cmtype":"file","cmlimit":min(limit*3,100),"cmnamespace":6})
+ data=api({"action":"query","list":"categorymembers","cmtitle":category,"cmtype":"file","cmlimit":min(limit*3,500),"cmnamespace":6})
  files=data.get("query",{}).get("categorymembers",[])
  random.shuffle(files)
  return files[:limit]
